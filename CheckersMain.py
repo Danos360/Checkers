@@ -1,13 +1,15 @@
 import sys
 from PySide6.QtWidgets import QApplication
-from CheckersMenu import MenuWindow
+from CheckersMenu import CheckersMenu
 
 
 def main():
     app = QApplication(sys.argv)
-    menu = MenuWindow()
+
+    menu = CheckersMenu()
     menu.show()
-    app.exec()
+
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":

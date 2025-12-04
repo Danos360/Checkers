@@ -4,7 +4,9 @@ import os
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QPushButton
-from CheckersGame import GameWindow
+from CheckersModel import CheckersModel
+from CheckersView import CheckersView
+from CheckersController import CheckersController
 
 WINDOW_WIDTH = 400
 WINDOW_HEIGHT = 464
@@ -12,7 +14,7 @@ WINDOW_TITLE = "Checkers Game"
 BACKGROUND_IMAGE = "Game-Design/menu-background.png"
 CHECKERS_LOGO_IMAGE = "Game-Design/checkers-logo.png"
 
-class MenuWindow(QMainWindow):
+class CheckersMenu(QMainWindow):
     def __init__(self):
         super().__init__()
 
@@ -34,9 +36,13 @@ class MenuWindow(QMainWindow):
         self.start_button.clicked.connect(self.start_game)
 
     def start_game(self):
-        self.game_window = GameWindow()
-        self.game_window.show()
+        model = CheckersModel()
+        view = CheckersView()
+        controller = CheckersController(model, view)
+
+        view.show()
         self.close()
+
 
 def main():
     app = QApplication(sys.argv)
