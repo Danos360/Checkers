@@ -38,7 +38,7 @@ class CheckersMenu(QMainWindow):
     def start_game(self):
         model = CheckersModel()
         view = CheckersView()
-        controller = CheckersController(model, view)
+        controller = CheckersController(model, view, "agent")
 
         view.show()
         self.close()
