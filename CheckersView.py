@@ -1,5 +1,5 @@
 import os
-from PySide6.QtWidgets import QMainWindow, QLabel, QPushButton
+from PySide6.QtWidgets import QMainWindow, QLabel, QPushButton, QMessageBox
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtCore import QSize
 
@@ -14,6 +14,8 @@ CHECKERS_LOGO_IMAGE = "Game-Design/checkers-logo.png"
 CHECKERS_BLACK = "Game-Design/checkers-black.png"
 CHECKERS_WHITE = "Game-Design/checkers-white.png"
 CHECKERS_MOVE = "Game-Design/checkers-shadow.png"
+CHECKERS_BLACK_KING = "Game-Design/checkers-blackKing.png"
+CHECKERS_WHITE_KING = "Game-Design/checkers-whiteKing.png"
 
 class CheckersView(QMainWindow):
     def __init__(self):
@@ -48,9 +50,20 @@ class CheckersView(QMainWindow):
                 if piece:
                     self.draw_piece(row, col, piece)
 
-    def draw_piece(self, row, col, color):
+    def draw_piece(self, row, col, piece):
+
         btn = QPushButton(self.label)
-        btn.setIcon(QIcon(CHECKERS_BLACK if color == "black" else CHECKERS_WHITE))
+
+        if piece["king"] and piece["color"] == "black":
+            icon = CHECKERS_BLACK_KING
+        elif piece["king"] and piece["color"] == "white":
+            icon = CHECKERS_WHITE_KING
+        elif piece["color"] == "black":
+            icon = CHECKERS_BLACK
+        else:
+            icon = CHECKERS_WHITE
+
+        btn.setIcon(QIcon(icon))
         btn.setGeometry(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE)
         btn.setIconSize(QSize(CELL_SIZE, CELL_SIZE))
         btn.setFlat(True)
@@ -76,3 +89,9 @@ class CheckersView(QMainWindow):
             btn.clicked.connect(lambda _, brow=row, bcol=col: self.on_move_click(brow, bcol))
             btn.show()
             self.move_buttons.append(btn)
+
+    def show_winner(self, color):
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Game Over")
+        msg.setText(f"{color.upper()} wins!")
+        msg.exec()

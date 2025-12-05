@@ -12,10 +12,7 @@ class CheckersController:
 
     def select_piece(self, row, col):
         piece = self.model.get_piece(row, col)
-        if not piece:
-            return
-
-        if piece != self.model.turn:
+        if not piece or piece["color"] != self.model.turn:
             return
 
         moves = self.model.get_moves(row, col)
@@ -31,12 +28,17 @@ class CheckersController:
 
         old_row, old_col = self.model.selected
         piece = self.model.get_piece(old_row, old_col)
-        if piece != self.model.turn:
+        if piece["color"] != self.model.turn:
             return
 
         self.model.move_piece(old_row, old_col, row, col)
         self.model.selected = None
         self.view.draw_board(self.model.board)
+
+        winner = self.model.check_winner()
+        if winner:
+            self.view.show_winner(winner)
+            return
 
         if self.game_mode == "agent" and self.model.turn == self.agent_color:
             self.agent_move()
@@ -49,5 +51,9 @@ class CheckersController:
         old_row, old_col, new_row, new_col = move
         self.model.move_piece(old_row, old_col, new_row, new_col)
         self.view.draw_board(self.model.board)
+
+        winner = self.model.check_winner()
+        if winner:
+            self.view.show_winner(winner)
 
 
