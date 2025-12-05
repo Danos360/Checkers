@@ -9,7 +9,7 @@ BOARD_SIZE = 8
 CELL_SIZE = WINDOW_WIDTH // BOARD_SIZE
 
 WINDOW_TITLE = "Checkers Game"
-BACKGROUND_IMAGE = "Game-Design/checkers-test.png"
+BACKGROUND_IMAGE = "Game-Design/checkers-BGtest.png"
 CHECKERS_LOGO_IMAGE = "Game-Design/checkers-logo.png"
 CHECKERS_BLACK = "Game-Design/checkers-black.png"
 CHECKERS_WHITE = "Game-Design/checkers-white.png"
@@ -28,9 +28,9 @@ class CheckersView(QMainWindow):
         self.piece_buttons = []
         self.move_buttons = []
 
-        pixmap = QPixmap(os.path.abspath(BACKGROUND_IMAGE))
+        bg = QPixmap(os.path.abspath(BACKGROUND_IMAGE))
         self.label = QLabel(self)
-        self.label.setPixmap(pixmap)
+        self.label.setPixmap(bg)
         self.label.setGeometry(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
         self.label.setScaledContents(True)
 
@@ -54,8 +54,9 @@ class CheckersView(QMainWindow):
         btn.setGeometry(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE)
         btn.setIconSize(QSize(CELL_SIZE, CELL_SIZE))
         btn.setFlat(True)
+        btn.setStyleSheet("QPushButton { padding: 0px; border: none; }")
 
-        btn.clicked.connect(lambda _, rr=row, cc=col: self.on_piece_click(rr, cc))
+        btn.clicked.connect(lambda _, brow=row, bcol=col: self.on_piece_click(brow, bcol))
         btn.show()
         self.piece_buttons.append(btn)
 
@@ -70,7 +71,8 @@ class CheckersView(QMainWindow):
             btn.setGeometry(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             btn.setIconSize(QSize(CELL_SIZE, CELL_SIZE))
             btn.setFlat(True)
+            btn.setStyleSheet("QPushButton { padding: 0px; border: none; }")
 
-            btn.clicked.connect(lambda _, rr=row, cc=col: self.on_move_click(rr, cc))
+            btn.clicked.connect(lambda _, brow=row, bcol=col: self.on_move_click(brow, bcol))
             btn.show()
             self.move_buttons.append(btn)

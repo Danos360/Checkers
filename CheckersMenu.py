@@ -46,7 +46,7 @@ class CheckersMenu(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
-    window = MenuWindow()
+    window = CheckersMenu()
     window.show()
     app.exec()
 

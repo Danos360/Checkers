@@ -1,12 +1,10 @@
 import random as rnd
-
-BOARD_SIZE = 8
+from CheckersView import BOARD_SIZE
 
 class CheckersModel:
     def __init__(self):
         self.board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
         self.setup_pieces()
-        self.selected = None
         self.turn = "white"
 
     def setup_pieces(self):
@@ -18,10 +16,19 @@ class CheckersModel:
                     elif row > 4:
                         self.board[row][col] = "white"
 
+    def move_piece(self, old_row, old_col, new_row, new_col):
+        piece = self.board[old_row][old_col]
+        self.board[old_row][old_col] = None
+        self.board[new_row][new_col] = piece
 
+        if abs(old_row - new_row) == 2:
+            self.remove_captured_piece(old_row,old_col,new_row,new_col)
+        self.turn = "black" if self.turn == "white" else "white"
 
-    def get_piece(self, row, col):
-        return self.board[row][col]
+    def remove_captured_piece(self,old_row,old_col,new_row,new_col):
+        mid_row = (old_row + new_row) // 2
+        mid_col = (old_col + new_col) // 2
+        self.board[mid_row][mid_col] = None
 
     def get_moves(self, row, col):
         color = self.get_piece(row, col)
@@ -58,17 +65,12 @@ class CheckersModel:
             return captures
         return moves
 
-    def move_piece(self, old_row, old_col, new_row, new_col):
-        piece = self.board[old_row][old_col]
-        self.board[old_row][old_col] = None
-        self.board[new_row][new_col] = piece
-
-        if abs(old_row - new_row) == 2:
-            self.remove_captured_piece(old_row,old_col,new_row,new_col)
-        self.turn = "black" if self.turn == "white" else "white"
-
     def get_agent_move(self, color):
-        pieces = [(r, c) for r in range(BOARD_SIZE) for c in range(BOARD_SIZE) if self.board[r][c] == color]
+        pieces = [(row, col)
+                  for row in range(BOARD_SIZE)
+                    for col in range(BOARD_SIZE)
+                        if self.board[row][col] == color]
+
         all_moves = []
 
         for row, col in pieces:
@@ -79,15 +81,13 @@ class CheckersModel:
         if not all_moves:
             return None
 
-        capture_moves = [m for m in all_moves if abs(m[0] - m[2]) == 2]
+        capture_moves = [move for move in all_moves if abs(move[0] - move[2]) == 2]
         if capture_moves:
             return rnd.choice(capture_moves)
 
         return rnd.choice(all_moves)
 
-    def remove_captured_piece(self,old_row,old_col,new_row,new_col):
-        mid_row = (old_row + new_row) // 2
-        mid_col = (old_col + new_col) // 2
-        self.board[mid_row][mid_col] = None
+    def get_piece(self, row, col):
+        return self.board[row][col]
 
 

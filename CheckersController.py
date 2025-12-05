@@ -38,7 +38,7 @@ class CheckersController:
         self.model.selected = None
         self.view.draw_board(self.model.board)
 
-        if self.game_mode == "ai" and self.model.turn == self.agent_color:
+        if self.game_mode == "agent" and self.model.turn == self.agent_color:
             self.agent_move()
 
     def agent_move(self):
