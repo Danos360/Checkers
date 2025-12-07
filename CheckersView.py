@@ -9,7 +9,7 @@ BOARD_SIZE = 8
 CELL_SIZE = WINDOW_WIDTH // BOARD_SIZE
 
 WINDOW_TITLE = "Checkers Game"
-BACKGROUND_IMAGE = "Game-Design/checkers-BGtest.png"
+
 CHECKERS_LOGO_IMAGE = "Game-Design/checkers-logo.png"
 CHECKERS_BLACK = "Game-Design/checkers-black.png"
 CHECKERS_WHITE = "Game-Design/checkers-white.png"
@@ -18,7 +18,7 @@ CHECKERS_BLACK_KING = "Game-Design/checkers-blackKing.png"
 CHECKERS_WHITE_KING = "Game-Design/checkers-whiteKing.png"
 
 class CheckersView(QMainWindow):
-    def __init__(self):
+    def __init__(self, bg_image):
         super().__init__()
         self.setFixedSize(WINDOW_WIDTH, WINDOW_HEIGHT)
         self.setWindowTitle(WINDOW_TITLE)
@@ -30,7 +30,7 @@ class CheckersView(QMainWindow):
         self.piece_buttons = []
         self.move_buttons = []
 
-        bg = QPixmap(os.path.abspath(BACKGROUND_IMAGE))
+        bg = QPixmap(os.path.abspath(bg_image))
         self.label = QLabel(self)
         self.label.setPixmap(bg)
         self.label.setGeometry(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)

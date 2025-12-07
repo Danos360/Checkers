@@ -18,6 +18,13 @@ class CheckersMenu(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.backgrounds = [
+            "Game-Design/checkers-BG1.png",
+            "Game-Design/checkers-BG2.png"
+        ]
+        self.bg_num = 1
+        self.game_mode = "1v1"
+
         self.setWindowTitle(WINDOW_TITLE)
         self.setFixedSize(QSize(WINDOW_WIDTH,WINDOW_HEIGHT))
         self.setWindowIcon(QIcon(CHECKERS_LOGO_IMAGE))
@@ -35,10 +42,49 @@ class CheckersMenu(QMainWindow):
         self.start_button.setGeometry(100, 200, 200, 50)
         self.start_button.clicked.connect(self.start_game)
 
+        self.bg_button = QPushButton("Change BG", self.label)
+        self.bg_button.setGeometry(50, 280, 100, 50)
+        self.bg_button.clicked.connect(self.next_background)
+
+        self.bg_preview = QLabel(self.label)
+        self.bg_preview.setGeometry(50, 335, 100, 100)
+        self.bg_preview.setScaledContents(True)
+
+        self.gm_button = QPushButton("Game Mode", self.label)
+        self.gm_button.setGeometry(250, 280, 100, 50)
+        self.gm_button.clicked.connect(self.next_gamemode)
+
+        self.gm_preview = QLabel(self.label)
+        self.gm_preview.setGeometry(250, 335, 100, 100)
+        self.gm_preview.setScaledContents(True)
+
+        self.update_bg_preview()
+        self.update_gm_preview()
+
+
+    def next_background(self):
+        self.bg_num = (self.bg_num+1) % len(self.backgrounds)
+        self.update_bg_preview()
+
+    def update_bg_preview(self):
+        pix = QPixmap(self.backgrounds[self.bg_num - 1])
+        self.bg_preview.setPixmap(pix)
+
+    def next_gamemode(self):
+        self.game_mode = "agent" if self.game_mode == "1v1" else "1v1"
+        self.update_gm_preview()
+
+    def update_gm_preview(self):
+        self.gm_preview.setText(self.game_mode.upper())
+        self.gm_preview.setAlignment(Qt.AlignCenter)
+        self.gm_preview.setStyleSheet("""QLabel{font-size: 20px; font-weight: bold; color: white; background-color: rgba(0,0,0,70); border-radius: 10px;}""")
+
     def start_game(self):
+        selected_bg = self.backgrounds[self.bg_num-1]
+
         model = CheckersModel()
-        view = CheckersView()
-        controller = CheckersController(model, view, "agent")
+        view = CheckersView(selected_bg)
+        controller = CheckersController(model, view, self.game_mode)
 
         view.show()
         self.close()
