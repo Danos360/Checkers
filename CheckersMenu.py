@@ -12,7 +12,11 @@ WINDOW_WIDTH = 400
 WINDOW_HEIGHT = 464
 WINDOW_TITLE = "Checkers Game"
 BACKGROUND_IMAGE = "Game-Design/menu-background.png"
+CHECKERS_ICON_LOGO_IMAGE = "Game-Design/checkers-icon-logo.png"
 CHECKERS_LOGO_IMAGE = "Game-Design/checkers-logo.png"
+
+START_BUTTON_IMAGE = "Game-Design/start_button.png"
+
 
 class CheckersMenu(QMainWindow):
     def __init__(self):
@@ -20,17 +24,23 @@ class CheckersMenu(QMainWindow):
 
         self.backgrounds = [
             "Game-Design/checkers-BG1.png",
-            "Game-Design/checkers-BG2.png"
+            "Game-Design/checkers-BG2.png",
+            "Game-Design/checkers-BG3.png"
+
         ]
+
         self.bg_num = 1
         self.game_mode = "1v1"
 
         self.setWindowTitle(WINDOW_TITLE)
         self.setFixedSize(QSize(WINDOW_WIDTH,WINDOW_HEIGHT))
-        self.setWindowIcon(QIcon(CHECKERS_LOGO_IMAGE))
+        self.setWindowIcon(QIcon(CHECKERS_ICON_LOGO_IMAGE))
 
         img_path = os.path.abspath(BACKGROUND_IMAGE)
         pixmap = QPixmap(img_path)
+
+        logo_path = os.path.abspath(CHECKERS_LOGO_IMAGE)
+        logo_pixmap = QPixmap(logo_path)
 
         self.label = QLabel(self)
         self.label.setPixmap(pixmap)
@@ -38,8 +48,19 @@ class CheckersMenu(QMainWindow):
         self.label.setGeometry(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
         self.label.setScaledContents(True)
 
-        self.start_button = QPushButton("Start Game", self.label)
-        self.start_button.setGeometry(100, 200, 200, 50)
+        self.logo = QLabel(self)
+        self.logo.setPixmap(logo_pixmap)
+        self.logo.setAlignment(Qt.AlignCenter)
+        self.logo.setFixedSize(QSize(400, 100))
+        self.logo.move(0, 50)
+        self.logo.setScaledContents(True)
+
+        self.start_button = QPushButton(self.label)
+        self.start_button.setIcon(QIcon(START_BUTTON_IMAGE))
+        self.start_button.setIconSize(QSize(200, 200))
+        self.start_button.move(100, 100)
+        self.start_button.setFlat(True)
+        self.start_button.setStyleSheet("QPushButton { padding: 0px; border: none; }")
         self.start_button.clicked.connect(self.start_game)
 
         self.bg_button = QPushButton("Change BG", self.label)

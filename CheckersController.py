@@ -19,8 +19,11 @@ class CheckersController:
         if not moves:
             return
 
+        self.view.clear_shadows()
         self.model.selected = (row, col)
         self.view.show_moves(moves)
+        self.view.draw_shadow(row, col)
+
 
     def make_move(self, row, col):
         if not self.model.selected:
@@ -34,6 +37,7 @@ class CheckersController:
         self.model.move_piece(old_row, old_col, row, col)
         self.model.selected = None
         self.view.draw_board(self.model.board)
+        self.view.clear_shadows()
 
         winner = self.model.check_winner()
         if winner:

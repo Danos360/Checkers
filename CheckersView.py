@@ -10,12 +10,30 @@ CELL_SIZE = WINDOW_WIDTH // BOARD_SIZE
 
 WINDOW_TITLE = "Checkers Game"
 
-CHECKERS_LOGO_IMAGE = "Game-Design/checkers-logo.png"
-CHECKERS_BLACK = "Game-Design/checkers-black.png"
-CHECKERS_WHITE = "Game-Design/checkers-white.png"
+CHECKERS_LOGO_IMAGE = "Game-Design/checkers-icon-logo.png"
 CHECKERS_MOVE = "Game-Design/checkers-shadow.png"
-CHECKERS_BLACK_KING = "Game-Design/checkers-blackKing.png"
-CHECKERS_WHITE_KING = "Game-Design/checkers-whiteKing.png"
+SKIN_SETS = {
+    "Game-Design/checkers-BG1.png": {
+        "black": "Game-Design/checkers-black.png",
+        "white": "Game-Design/checkers-white.png",
+        "black_king": "Game-Design/checkers-blackKing.png",
+        "white_king": "Game-Design/checkers-whiteKing.png",
+    },
+
+    "Game-Design/checkers-BG2.png": {
+        "black": "Game-Design/checkers-black2.png",
+        "white": "Game-Design/checkers-white2.png",
+        "black_king": "Game-Design/checkers-blackKing2.png",
+        "white_king": "Game-Design/checkers-whiteKing2.png",
+    },
+
+    "Game-Design/checkers-BG3.png": {
+        "black": "Game-Design/checkers-black2.png",
+        "white": "Game-Design/checkers-white2.png",
+        "black_king": "Game-Design/checkers-blackKing2.png",
+        "white_king": "Game-Design/checkers-whiteKing2.png",
+    }
+}
 
 class CheckersView(QMainWindow):
     def __init__(self, bg_image):
@@ -29,6 +47,9 @@ class CheckersView(QMainWindow):
 
         self.piece_buttons = []
         self.move_buttons = []
+        self.shadow_buttons = []
+
+        self.skin = SKIN_SETS.get(bg_image, SKIN_SETS["Game-Design/checkers-BG1.png"])
 
         bg = QPixmap(os.path.abspath(bg_image))
         self.label = QLabel(self)
@@ -55,13 +76,13 @@ class CheckersView(QMainWindow):
         btn = QPushButton(self.label)
 
         if piece["king"] and piece["color"] == "black":
-            icon = CHECKERS_BLACK_KING
+            icon = self.skin["black_king"]
         elif piece["king"] and piece["color"] == "white":
-            icon = CHECKERS_WHITE_KING
+            icon = self.skin["white_king"]
         elif piece["color"] == "black":
-            icon = CHECKERS_BLACK
+            icon = self.skin["black"]
         else:
-            icon = CHECKERS_WHITE
+            icon = self.skin["white"]
 
         btn.setIcon(QIcon(icon))
         btn.setGeometry(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE)
@@ -89,6 +110,24 @@ class CheckersView(QMainWindow):
             btn.clicked.connect(lambda _, brow=row, bcol=col: self.on_move_click(brow, bcol))
             btn.show()
             self.move_buttons.append(btn)
+
+    def draw_shadow(self, row, col):
+        btn = QPushButton(self.label)
+        btn.setIcon(QIcon(CHECKERS_MOVE))  # shadow image
+        btn.setGeometry(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+        btn.setIconSize(QSize(CELL_SIZE, CELL_SIZE))
+        btn.setFlat(True)
+        btn.setStyleSheet("QPushButton { padding: 0px; border: none; }")
+
+        btn.lower()
+        btn.show()
+
+        self.shadow_buttons.append(btn)
+
+    def clear_shadows(self):
+        for btn in self.shadow_buttons:
+            btn.deleteLater()
+        self.shadow_buttons = []
 
     def show_winner(self, color):
         msg = QMessageBox(self)
