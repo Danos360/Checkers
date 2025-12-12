@@ -10,7 +10,7 @@ CELL_SIZE = WINDOW_WIDTH // BOARD_SIZE
 
 WINDOW_TITLE = "Checkers Game"
 
-CHECKERS_LOGO_IMAGE = "Game-Design/checkers-icon-logo.png"
+CHECKERS_LOGO_IMAGE = "Game-Design/checkers-black2.png"
 CHECKERS_MOVE = "Game-Design/checkers-shadow.png"
 SKIN_SETS = {
     "Game-Design/checkers-BG1.png": {

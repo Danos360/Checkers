@@ -2,7 +2,7 @@ import sys
 import os
 
 from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QPixmap, QIcon
+from PySide6.QtGui import QPixmap, QIcon, QPainter, QPainterPath
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QPushButton
 from CheckersModel import CheckersModel
 from CheckersView import CheckersView
@@ -12,10 +12,12 @@ WINDOW_WIDTH = 400
 WINDOW_HEIGHT = 464
 WINDOW_TITLE = "Checkers Game"
 BACKGROUND_IMAGE = "Game-Design/menu-background.png"
-CHECKERS_ICON_LOGO_IMAGE = "Game-Design/checkers-icon-logo.png"
+CHECKERS_ICON_LOGO_IMAGE = "Game-Design/checkers-black2.png"
 CHECKERS_LOGO_IMAGE = "Game-Design/checkers-logo.png"
 
 START_BUTTON_IMAGE = "Game-Design/start_button.png"
+GAMEMODE_BUTTON_IMAGE = "Game-Design/gamemode_button.png"
+CHANGEBG_BUTTON_IMAGE = "Game-Design/changebg_button.png"
 
 
 class CheckersMenu(QMainWindow):
@@ -63,16 +65,24 @@ class CheckersMenu(QMainWindow):
         self.start_button.setStyleSheet("QPushButton { padding: 0px; border: none; }")
         self.start_button.clicked.connect(self.start_game)
 
-        self.bg_button = QPushButton("Change BG", self.label)
-        self.bg_button.setGeometry(50, 280, 100, 50)
+        self.bg_button = QPushButton(self.label)
+        self.bg_button.setIcon(QIcon(CHANGEBG_BUTTON_IMAGE))
+        self.bg_button.setIconSize(QSize(150, 150))
+        self.bg_button.move(25, 235)
+        self.bg_button.setFlat(True)
+        self.bg_button.setStyleSheet("QPushButton { padding: 0px; border: none; }")
         self.bg_button.clicked.connect(self.next_background)
 
         self.bg_preview = QLabel(self.label)
         self.bg_preview.setGeometry(50, 335, 100, 100)
         self.bg_preview.setScaledContents(True)
 
-        self.gm_button = QPushButton("Game Mode", self.label)
-        self.gm_button.setGeometry(250, 280, 100, 50)
+        self.gm_button = QPushButton(self.label)
+        self.gm_button.setIcon(QIcon(GAMEMODE_BUTTON_IMAGE))
+        self.gm_button.setIconSize(QSize(150, 150))
+        self.gm_button.move(225, 235)
+        self.gm_button.setFlat(True)
+        self.gm_button.setStyleSheet("QPushButton { padding: 0px; border: none; }")
         self.gm_button.clicked.connect(self.next_gamemode)
 
         self.gm_preview = QLabel(self.label)
@@ -88,8 +98,21 @@ class CheckersMenu(QMainWindow):
         self.update_bg_preview()
 
     def update_bg_preview(self):
-        pix = QPixmap(self.backgrounds[self.bg_num - 1])
-        self.bg_preview.setPixmap(pix)
+        size = self.bg_preview.size()
+
+        pix = QPixmap(self.backgrounds[self.bg_num - 1]).scaled(size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+
+        out = QPixmap(size)
+        out.fill(Qt.transparent)
+
+        p = QPainter(out)
+        path = QPainterPath()
+        path.addRoundedRect(out.rect(), 20, 20)
+        p.setClipPath(path)
+        p.drawPixmap(0, 0, pix)
+        p.end()
+
+        self.bg_preview.setPixmap(out)
 
     def next_gamemode(self):
         self.game_mode = "agent" if self.game_mode == "1v1" else "1v1"
