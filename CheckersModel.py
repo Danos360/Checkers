@@ -17,6 +17,12 @@ class CheckersModel:
                     elif row > 4:
                         self.board[row][col] = {"color": "white", "king": False}
 
+    def reset_game(self):
+        self.board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
+        self.selected = None
+        self.turn = "white"
+        self.setup_pieces()
+
     def get_piece(self, row, col):
         return self.board[row][col]
 
@@ -113,7 +119,6 @@ class CheckersModel:
 
         score += 1
 
-        # print(f"{(old_row, old_col)} to {(new_row, new_col)} with score = {score}")
         return score
 
     def check_make_king(self, row, col):

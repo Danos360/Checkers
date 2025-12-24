@@ -3,7 +3,7 @@ import os
 
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QPixmap, QIcon, QPainter, QPainterPath
-from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QPushButton
+from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QPushButton, QWidget, QVBoxLayout
 from CheckersModel import CheckersModel
 from CheckersView import CheckersView
 from CheckersController import CheckersController
@@ -18,7 +18,9 @@ CHECKERS_LOGO_IMAGE = "Game-Design/checkers-logo.png"
 START_BUTTON_IMAGE = "Game-Design/start_button.png"
 GAMEMODE_BUTTON_IMAGE = "Game-Design/gamemode_button.png"
 CHANGEBG_BUTTON_IMAGE = "Game-Design/changebg_button.png"
-
+SETTINGS_ICON = "Game-Design/settings-icon.png"
+SOUNDON_ICON = "Game-Design/soundon-icon.png"
+SOUNDOFF_ICON = "Game-Design/soundoff-icon.png"
 
 class CheckersMenu(QMainWindow):
     def __init__(self):
@@ -33,6 +35,7 @@ class CheckersMenu(QMainWindow):
 
         self.bg_num = 1
         self.game_mode = "1v1"
+        self.sound_enabled = True
 
         self.setWindowTitle(WINDOW_TITLE)
         self.setFixedSize(QSize(WINDOW_WIDTH,WINDOW_HEIGHT))
@@ -57,20 +60,20 @@ class CheckersMenu(QMainWindow):
         self.logo.move(0, 50)
         self.logo.setScaledContents(True)
 
+        self.setup_layout(self.sound_enabled)
+
+        self.update_bg_preview()
+        self.update_gm_preview()
+
+    def setup_layout(self, sound_state):
         self.start_button = QPushButton(self.label)
         self.start_button.setIcon(QIcon(START_BUTTON_IMAGE))
-        self.start_button.setIconSize(QSize(200, 200))
         self.start_button.move(100, 100)
-        self.start_button.setFlat(True)
-        self.start_button.setStyleSheet("QPushButton { padding: 0px; border: none; }")
         self.start_button.clicked.connect(self.start_game)
 
         self.bg_button = QPushButton(self.label)
         self.bg_button.setIcon(QIcon(CHANGEBG_BUTTON_IMAGE))
-        self.bg_button.setIconSize(QSize(150, 150))
         self.bg_button.move(25, 235)
-        self.bg_button.setFlat(True)
-        self.bg_button.setStyleSheet("QPushButton { padding: 0px; border: none; }")
         self.bg_button.clicked.connect(self.next_background)
 
         self.bg_preview = QLabel(self.label)
@@ -79,19 +82,43 @@ class CheckersMenu(QMainWindow):
 
         self.gm_button = QPushButton(self.label)
         self.gm_button.setIcon(QIcon(GAMEMODE_BUTTON_IMAGE))
-        self.gm_button.setIconSize(QSize(150, 150))
         self.gm_button.move(225, 235)
-        self.gm_button.setFlat(True)
-        self.gm_button.setStyleSheet("QPushButton { padding: 0px; border: none; }")
         self.gm_button.clicked.connect(self.next_gamemode)
 
         self.gm_preview = QLabel(self.label)
         self.gm_preview.setGeometry(250, 335, 100, 100)
         self.gm_preview.setScaledContents(True)
 
-        self.update_bg_preview()
-        self.update_gm_preview()
+        for btn in (self.start_button, self.bg_button, self.gm_button):
+            btn.setFlat(True)
+            btn.setStyleSheet("QPushButton { padding: 0px; border: none; }")
+            btn.setIconSize(QSize(150, 150))
+        self.start_button.setIconSize(QSize(200, 200))
 
+        self.settings_btn = QPushButton(self)
+        self.settings_btn.setIcon(QIcon(SETTINGS_ICON))
+        self.settings_btn.move(WINDOW_WIDTH - 50, 10)
+        self.settings_btn.clicked.connect(self.toggle_settings_panel)
+
+        self.settings_panel = QWidget(self)
+        self.settings_panel.setGeometry(WINDOW_WIDTH - 60, 40, 150, 60)
+        self.settings_panel.hide()
+
+        panel_layout = QVBoxLayout(self.settings_panel)
+        panel_layout.setContentsMargins(10, 10, 10, 10)
+        panel_layout.setSpacing(8)
+
+        self.sound_btn = QPushButton()
+        self.update_sound_icon()
+        self.sound_btn.clicked.connect(self.toggle_sound)
+
+        for btn in (self.settings_btn, self.sound_btn):
+            btn.setFlat(True)
+            btn.setStyleSheet("QPushButton { padding: 0px; border: none; }")
+            btn.setFixedSize(36, 36)
+            btn.setIconSize(QSize(36, 36))
+
+        panel_layout.addWidget(self.sound_btn)
 
     def next_background(self):
         self.bg_num = (self.bg_num+1) % len(self.backgrounds)
@@ -105,12 +132,12 @@ class CheckersMenu(QMainWindow):
         out = QPixmap(size)
         out.fill(Qt.transparent)
 
-        p = QPainter(out)
+        pr = QPainter(out)
         path = QPainterPath()
         path.addRoundedRect(out.rect(), 20, 20)
-        p.setClipPath(path)
-        p.drawPixmap(0, 0, pix)
-        p.end()
+        pr.setClipPath(path)
+        pr.drawPixmap(0, 0, pix)
+        pr.end()
 
         self.bg_preview.setPixmap(out)
 
@@ -123,23 +150,32 @@ class CheckersMenu(QMainWindow):
         self.gm_preview.setAlignment(Qt.AlignCenter)
         self.gm_preview.setStyleSheet("""QLabel{font-size: 20px; font-weight: bold; color: white; background-color: rgba(0,0,0,70); border-radius: 10px;}""")
 
+    def toggle_settings_panel(self):
+        self.settings_panel.setVisible(not self.settings_panel.isVisible())
+
+    def update_sound_icon(self):
+        icon = SOUNDON_ICON if self.sound_enabled else SOUNDOFF_ICON
+        self.sound_btn.setIcon(QIcon(icon))
+
+    def toggle_sound(self):
+        self.sound_enabled = not self.sound_enabled
+        self.update_sound_icon()
+
     def start_game(self):
         selected_bg = self.backgrounds[self.bg_num-1]
 
         model = CheckersModel()
-        view = CheckersView(selected_bg)
+        view = CheckersView(selected_bg, self.sound_enabled)
         controller = CheckersController(model, view, self.game_mode)
 
         view.show()
         self.close()
-
 
 def main():
     app = QApplication(sys.argv)
     window = CheckersMenu()
     window.show()
     app.exec()
-
 
 if __name__ == "__main__":
     main()
