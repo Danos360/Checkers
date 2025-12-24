@@ -232,6 +232,8 @@ class CheckersView(QMainWindow):
 
         restart_btn = QPushButton("Play Again")
         menu_btn = QPushButton("Main Menu")
+        restart_btn.setStyleSheet( "color: white;" )
+        menu_btn.setStyleSheet( "color: white;" )
 
         restart_btn.clicked.connect(on_restart)
         menu_btn.clicked.connect(on_menu)

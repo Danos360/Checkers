@@ -17,6 +17,28 @@ class CheckersModel:
                     elif row > 4:
                         self.board[row][col] = {"color": "white", "king": False}
 
+    def print(self):
+        symbols = {
+            ("white", False): "w",
+            ("white", True): "W",
+            ("black", False): "b",
+            ("black", True): "B",
+            None: "."
+        }
+
+        for row in range(8):
+            line = ""
+            for col in range(8):
+                piece = self.board[row][col]
+                if piece is None:
+                    line += symbols[None] + " "
+                else:
+                    key = (piece["color"], piece["king"])
+                    line += symbols[key] + " "
+            print(line)
+
+        print()
+
     def reset_game(self):
         self.board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
         self.selected = None
@@ -171,7 +193,24 @@ class CheckersModel:
         mid_col = (old_col + new_col) // 2
         self.board[mid_row][mid_col] = None
 
+    def check_draw(self):
+        white_kings = 0
+        black_kings = 0
+
+        for row in self.board:
+            for piece in row:
+                if piece:
+                    if not piece["king"]:
+                        return False
+                    if piece["color"] == "white":
+                        white_kings += 1
+                    else:
+                        black_kings += 1
+
+        return white_kings > 0 and white_kings == black_kings
+
     def check_winner(self):
+        # return "white"
         white = 0
         black = 0
         for row in range(BOARD_SIZE):
@@ -189,3 +228,45 @@ class CheckersModel:
             return "white"
         return None
 
+    def play_agent_vs_agent(self, max_moves=300):
+        self.reset_game()
+        moves = 0
+
+        while moves < max_moves:
+            if self.check_draw():
+                return "draw"
+
+            color = self.turn
+            move = self.get_agent_move(color)
+
+            if not move:
+                return "black" if color == "white" else "white"
+
+            self.move_piece(*move)
+
+            winner = self.check_winner()
+            if winner:
+                return winner
+
+            moves += 1
+
+        return "draw"
+
+    def run_tournament(self, rounds=100):
+        results = {"white": 0, "black": 0, "draw": 0}
+
+        for i in range(1, rounds + 1):
+            winner = self.play_agent_vs_agent()
+            results[winner] += 1
+            print(f"Game {i}: {winner}")
+
+        print("\nTOURNAMENT RESULTS")
+        print("------------------")
+        for k, v in results.items():
+            print(f"{k.upper()}: {v}")
+
+        return results
+
+if __name__ == "__main__":
+    model = CheckersModel()
+    model.run_tournament(1000)

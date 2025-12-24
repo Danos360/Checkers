@@ -1,11 +1,15 @@
 from PySide6.QtCore import QTimer
 
 class CheckersController:
-    def __init__(self, model, view, game_mode="agent"):
+    def __init__(self, model, view, game_mode="agent", tournament_rounds=0):
         self.model = model
         self.view = view
         self.game_mode = game_mode
-        self.agent_color = "black" if game_mode == "agent" else None
+
+        self.model = model
+        self.view = view
+        self.game_mode = game_mode
+        self.agent_color = "black" if self.game_mode == "agent" else None
         self.timer = 0
 
         view.on_piece_click = self.select_piece
@@ -91,15 +95,13 @@ class CheckersController:
         winner = self.model.check_winner()
         if winner:
             self.game_timer.stop()
-
             minutes = self.timer // 60
             seconds = self.timer % 60
             time = f"{minutes:02d}:{seconds:02d}"
 
             self.view.show_end_screen(winner, time,
                 on_restart=self.restart_game,
-                on_menu=self.view.back_to_menu
-            )
+                on_menu=self.view.back_to_menu)
             return
 
         if self.game_mode == "agent" and self.model.turn == self.agent_color:
@@ -110,5 +112,8 @@ class CheckersController:
         self.timer = 0
         self.view.timer_text.setText("Time: 00:00")
         self.game_timer.start()
-        self.view.end_screen.deleteLater()
+
+        if self.view.end_screen:
+            self.view.end_screen.deleteLater()
+
         self.update()
