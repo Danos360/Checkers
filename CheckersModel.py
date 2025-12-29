@@ -17,7 +17,7 @@ class CheckersModel:
                     elif row > 4:
                         self.board[row][col] = {"color": "white", "king": False}
 
-    def print(self):
+    def print(self, board=None):
         symbols = {
             ("white", False): "w",
             ("white", True): "W",
@@ -124,22 +124,23 @@ class CheckersModel:
         piece = self.board[old_r][old_c]
 
         if abs(old_r - new_r) == 2:
-            score += 15
+            score += 20
 
         if not piece["king"]:
             if color == "white" and new_r == 0:
-                score += 25
+                score += 30
             if color == "black" and new_r == BOARD_SIZE - 1:
-                score += 25
+                score += 30
+
+        center = BOARD_SIZE // 2
+        score += max(0, 4 - abs(new_c - center))
 
         simulated_board = self.simulate_move(old_r, old_c, new_r, new_c)
 
         if self.is_risky(simulated_board, new_r, new_c, color):
-            score -= 30
+            score -= 15
         else:
-            score += 5
-
-        score += 1
+            score += 10
 
         return score
 
@@ -181,8 +182,7 @@ class CheckersModel:
             for col in range(BOARD_SIZE):
                 piece = board[row][col]
                 if piece and piece["color"] == enemy:
-                    moves = self.get_moves(row, col, board, enemy)
-                    for mover, movec in moves:
+                    for mover, movec in self.get_moves(row, col, board, enemy):
                         if abs(row - mover) == 2:
                             if (row + mover) // 2 == new_r and (col + movec) // 2 == new_c:
                                 return True
@@ -193,67 +193,82 @@ class CheckersModel:
         mid_col = (old_col + new_col) // 2
         self.board[mid_row][mid_col] = None
 
-    def check_draw(self):
+    def has_any_moves(self, color):
+        for row in range(BOARD_SIZE):
+            for col in range(BOARD_SIZE):
+                piece = self.board[row][col]
+                if piece and piece["color"] == color:
+                    if self.get_moves(row, col):
+                        return True
+        return False
+
+    def check_game_end(self):
+        white = 0
+        black = 0
         white_kings = 0
         black_kings = 0
+        white_pieces = 0
+        black_pieces = 0
 
         for row in self.board:
             for piece in row:
                 if piece:
-                    if not piece["king"]:
-                        return False
-                    if piece["color"] == "white":
-                        white_kings += 1
-                    else:
-                        black_kings += 1
-
-        return white_kings > 0 and white_kings == black_kings
-
-    def check_winner(self):
-        # return "white"
-        white = 0
-        black = 0
-        for row in range(BOARD_SIZE):
-            for col in range(BOARD_SIZE):
-                piece = self.board[row][col]
-                if piece:
                     if piece["color"] == "white":
                         white += 1
+                        if piece["king"]:
+                            white_kings += 1
+                        else:
+                            white_pieces += 1
                     else:
                         black += 1
+                        if piece["king"]:
+                            black_kings += 1
+                        else:
+                            black_pieces += 1
 
         if white == 0:
             return "black"
         if black == 0:
             return "white"
+
+        white_can_move = self.has_any_moves("white")
+        black_can_move = self.has_any_moves("black")
+
+        if not white_can_move and black_can_move:
+            return "black"
+        if not black_can_move and white_can_move:
+            return "white"
+
+        if not white_can_move and not black_can_move:
+            return "draw"
+
+        if white_pieces == 0 and black_pieces == 0:
+            if white_kings == black_kings:
+                return "draw"
+
         return None
 
-    def play_agent_vs_agent(self, max_moves=300):
+    def play_agent_vs_agent(self, max_moves=800):
         self.reset_game()
         moves = 0
 
         while moves < max_moves:
-            if self.check_draw():
-                return "draw"
-
-            color = self.turn
-            move = self.get_agent_move(color)
-
+            move = self.get_agent_move(self.turn)
             if not move:
-                return "black" if color == "white" else "white"
+                return "black" if self.turn == "white" else "white"
 
             self.move_piece(*move)
 
-            winner = self.check_winner()
-            if winner:
-                return winner
+            result = self.check_game_end()
+            if result:
+                return result
 
             moves += 1
 
-        return "draw"
+        return "timeout"
 
     def run_tournament(self, rounds=100):
-        results = {"white": 0, "black": 0, "draw": 0}
+        results = {"white": 0, "black": 0, "draw": 0, "timeout": 0}
 
         for i in range(1, rounds + 1):
             winner = self.play_agent_vs_agent()
@@ -269,4 +284,4 @@ class CheckersModel:
 
 if __name__ == "__main__":
     model = CheckersModel()
-    model.run_tournament(1000)
+    model.run_tournament(200)
