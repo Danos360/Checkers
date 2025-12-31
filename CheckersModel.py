@@ -4,11 +4,19 @@ import json
 from CheckersView import BOARD_SIZE
 
 class CheckersModel:
-    def __init__(self):
+    def __init__(self, gamma=0.95, memory_file="checkers_scores.json"):
+        self.gamma = gamma
+        self.memory_file = memory_file
+
         self.board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
-        self.setup_pieces()
         self.turn = "white"
         self.selected = None
+        self.history = []
+
+        self.values = self.load_memory()
+
+        self.setup_pieces()
+
 
     def setup_pieces(self):
         for row in range(BOARD_SIZE):
@@ -33,16 +41,16 @@ class CheckersModel:
 
     def board_to_key(self):
         key = []
-        for r in range(BOARD_SIZE):
-            for c in range(BOARD_SIZE):
-                p = self.board[r][c]
-                if p is None:
+        for row in range(BOARD_SIZE):
+            for col in range(BOARD_SIZE):
+                piece = self.board[row][col]
+                if piece is None:
                     key.append(".")
                 else:
-                    if p["color"] == "white":
-                        key.append("W" if p["king"] else "w")
+                    if piece["color"] == "white":
+                        key.append("W" if piece["king"] else "w")
                     else:
-                        key.append("B" if p["king"] else "b")
+                        key.append("B" if piece["king"] else "b")
         key.append(self.turn[0])
         return "".join(key)
 
@@ -51,13 +59,11 @@ class CheckersModel:
         self.board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
         self.selected = None
         self.turn = "white"
+        self.history = []
         self.setup_pieces()
 
     def get_piece(self, row, col):
         return self.board[row][col]
-
-    def check_valid_move(self, r, c):
-        return 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE
 
     def move_piece(self, old_row, old_col, new_row, new_col):
         piece = self.board[old_row][old_col]
@@ -72,6 +78,16 @@ class CheckersModel:
 
         self.check_make_king(new_row, new_col)
         self.turn = "black" if self.turn == "white" else "white"
+
+        self.history.append(self.board_to_key())
+
+    def remove_captured_piece(self,old_row,old_col,new_row,new_col):
+        mid_row = (old_row + new_row) // 2
+        mid_col = (old_col + new_col) // 2
+        self.board[mid_row][mid_col] = None
+
+    def check_valid_move(self, r, c):
+        return 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE
 
     def get_moves(self, row, col, board=None, color=None):
         if board is None:
@@ -207,11 +223,6 @@ class CheckersModel:
                                 return True
         return False
 
-    def remove_captured_piece(self,old_row,old_col,new_row,new_col):
-        mid_row = (old_row + new_row) // 2
-        mid_col = (old_col + new_col) // 2
-        self.board[mid_row][mid_col] = None
-
     def has_any_moves(self, color):
         captures = False
 
@@ -257,6 +268,25 @@ class CheckersModel:
 
         return None
 
+    def score_game(self, winner):
+        if winner == "white":
+            reward = 1.0
+        elif winner == "black":
+            reward = 0.0
+        else:
+            reward = 0.5
+
+        N = len(self.history)
+        for i, key in enumerate(self.history):
+            discounted = reward * (self.gamma ** (N - i - 1))
+
+            if key not in self.values:
+                self.values[key] = [discounted, 1]
+            else:
+                old, count = self.values[key]
+                new = (old * count + discounted) / (count + 1)
+                self.values[key] = [new, count + 1]
+
     def play_agent_vs_agent(self, gamemode="AGENTS", agent_color="white", max_moves=500):
         self.reset_game()
         moves = 0
@@ -264,6 +294,7 @@ class CheckersModel:
         while moves < max_moves:
             result = self.check_winner()
             if result:
+                self.score_game(result)
                 return result
 
             if gamemode == "RANDOM":
@@ -280,6 +311,7 @@ class CheckersModel:
             self.move_piece(*move)
             moves += 1
 
+        self.score_game("lock")
         return "lock (more moves)"
 
     def run_tournament(self, rounds=100, gamemode="AGENTS", agent_color="white"):
@@ -310,7 +342,20 @@ class CheckersModel:
 
         return results
 
+    def load_memory(self):
+        if os.path.exists(self.memory_file):
+            with open(self.memory_file, "r") as f:
+                return json.load(f)
+        return {}
+
+    def save_memory(self):
+        with open(self.memory_file, "w") as f:
+            json.dump(self.values, f, indent=2)
+
+
 if __name__ == "__main__":
     model = CheckersModel()
     model.run_tournament(50)
     # model.run_tournament(50, gamemode="RANDOM")
+    model.save_memory()
+
