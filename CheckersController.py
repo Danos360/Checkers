@@ -92,7 +92,7 @@ class CheckersController:
     def make_move(self):
         self.update()
 
-        winner = self.model.check_game_end()
+        winner = self.model.check_winner()
         if winner:
             self.game_timer.stop()
             minutes = self.timer // 60

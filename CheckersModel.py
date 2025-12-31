@@ -1,4 +1,6 @@
 import random as rnd
+import os
+import json
 from CheckersView import BOARD_SIZE
 
 class CheckersModel:
@@ -17,7 +19,7 @@ class CheckersModel:
                     elif row > 4:
                         self.board[row][col] = {"color": "white", "king": False}
 
-    def print(self, board=None):
+    def print(self):
         symbols = {
             ("white", False): "w",
             ("white", True): "W",
@@ -25,19 +27,25 @@ class CheckersModel:
             ("black", True): "B",
             None: "."
         }
-
-        for row in range(8):
-            line = ""
-            for col in range(8):
-                piece = self.board[row][col]
-                if piece is None:
-                    line += symbols[None] + " "
-                else:
-                    key = (piece["color"], piece["king"])
-                    line += symbols[key] + " "
-            print(line)
-
+        for row in self.board:
+            print(" ".join(symbols[p["color"], p["king"]] if p else "." for p in row))
         print()
+
+    def board_to_key(self):
+        key = []
+        for r in range(BOARD_SIZE):
+            for c in range(BOARD_SIZE):
+                p = self.board[r][c]
+                if p is None:
+                    key.append(".")
+                else:
+                    if p["color"] == "white":
+                        key.append("W" if p["king"] else "w")
+                    else:
+                        key.append("B" if p["king"] else "b")
+        key.append(self.turn[0])
+        return "".join(key)
+
 
     def reset_game(self):
         self.board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
@@ -119,6 +127,18 @@ class CheckersModel:
 
         return rnd.choice(best_moves) if best_moves else None
 
+    def get_random_move(self, color):
+        all_moves = []
+
+        for row in range(BOARD_SIZE):
+            for col in range(BOARD_SIZE):
+                piece = self.board[row][col]
+                if piece and piece["color"] == color:
+                    for new_row, new_col in self.get_moves(row, col, board=self.board, color=color):
+                        all_moves.append((row, col, new_row, new_col))
+
+        return rnd.choice(all_moves) if all_moves else None
+
     def score_move(self, old_r, old_c, new_r, new_c, color):
         score = 0
         piece = self.board[old_r][old_c]
@@ -141,7 +161,6 @@ class CheckersModel:
             score -= 15
         else:
             score += 10
-
         return score
 
     def check_make_king(self, row, col):
@@ -194,19 +213,22 @@ class CheckersModel:
         self.board[mid_row][mid_col] = None
 
     def has_any_moves(self, color):
+        captures = False
+
         for row in range(BOARD_SIZE):
             for col in range(BOARD_SIZE):
                 piece = self.board[row][col]
                 if piece and piece["color"] == color:
-                    if self.get_moves(row, col):
-                        return True
-        return False
+                    moves = self.get_moves(row, col)
+                    if moves:
+                        for move_r, move_c in moves:
+                            if abs(row - move_r) == 2:
+                                return True
+                        captures = True
 
-    def check_game_end(self):
-        white = 0
-        black = 0
-        white_kings = 0
-        black_kings = 0
+        return captures
+
+    def check_winner(self):
         white_pieces = 0
         black_pieces = 0
 
@@ -214,65 +236,71 @@ class CheckersModel:
             for piece in row:
                 if piece:
                     if piece["color"] == "white":
-                        white += 1
-                        if piece["king"]:
-                            white_kings += 1
-                        else:
-                            white_pieces += 1
+                        white_pieces += 1
                     else:
-                        black += 1
-                        if piece["king"]:
-                            black_kings += 1
-                        else:
-                            black_pieces += 1
+                        black_pieces += 1
 
-        if white == 0:
+        if white_pieces == 0:
             return "black"
-        if black == 0:
+        if black_pieces == 0:
             return "white"
 
         white_can_move = self.has_any_moves("white")
         black_can_move = self.has_any_moves("black")
 
-        if not white_can_move and black_can_move:
+        if black_can_move and not white_can_move:
             return "black"
-        if not black_can_move and white_can_move:
+        if white_can_move and not black_can_move:
             return "white"
-
         if not white_can_move and not black_can_move:
-            return "draw"
-
-        if white_pieces == 0 and black_pieces == 0:
-            if white_kings == black_kings:
-                return "draw"
+            return "lock"
 
         return None
 
-    def play_agent_vs_agent(self, max_moves=800):
+    def play_agent_vs_agent(self, gamemode="AGENTS", agent_color="white", max_moves=500):
         self.reset_game()
         moves = 0
 
         while moves < max_moves:
-            move = self.get_agent_move(self.turn)
-            if not move:
-                return "black" if self.turn == "white" else "white"
-
-            self.move_piece(*move)
-
-            result = self.check_game_end()
+            result = self.check_winner()
             if result:
                 return result
 
+            if gamemode == "RANDOM":
+                if self.turn == agent_color:
+                    move = self.get_agent_move(self.turn)
+                else:
+                    move = self.get_random_move(self.turn)
+            else:
+                move = self.get_agent_move(self.turn)
+
+            if not move:
+                return self.check_winner()
+
+            self.move_piece(*move)
             moves += 1
 
-        return "timeout"
+        return "lock (more moves)"
 
-    def run_tournament(self, rounds=100):
-        results = {"white": 0, "black": 0, "draw": 0, "timeout": 0}
+    def run_tournament(self, rounds=100, gamemode="AGENTS", agent_color="white"):
+        if gamemode == "AGENTS":
+            results = {"white": 0, "black": 0, "lock": 0, "lock (more moves)": 0}
+        else:
+            results = {"agent": 0, "random": 0, "lock": 0, "lock (more moves)": 0}
 
         for i in range(1, rounds + 1):
-            winner = self.play_agent_vs_agent()
-            results[winner] += 1
+            winner = self.play_agent_vs_agent(gamemode, agent_color)
+
+            if gamemode == "AGENTS":
+                results[winner] += 1
+            else:
+                if winner == agent_color:
+                    results["agent"] += 1
+                elif winner == ("black" if agent_color == "white" else "white"):
+                    results["random"] += 1
+                else:
+                    results[winner] += 1
+
             print(f"Game {i}: {winner}")
 
         print("\nTOURNAMENT RESULTS")
@@ -284,4 +312,5 @@ class CheckersModel:
 
 if __name__ == "__main__":
     model = CheckersModel()
-    model.run_tournament(200)
+    model.run_tournament(50)
+    # model.run_tournament(50, gamemode="RANDOM")
