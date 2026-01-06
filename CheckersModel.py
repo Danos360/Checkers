@@ -1,6 +1,7 @@
 import random as rnd
 import os
 import json
+import copy
 from CheckersView import BOARD_SIZE
 
 class CheckersModel:
@@ -39,11 +40,11 @@ class CheckersModel:
             print(" ".join(symbols[p["color"], p["king"]] if p else "." for p in row))
         print()
 
-    def board_to_key(self):
+    def board_to_key(self, board):
         key = []
         for row in range(BOARD_SIZE):
             for col in range(BOARD_SIZE):
-                piece = self.board[row][col]
+                piece = board[row][col]
                 if piece is None:
                     key.append(".")
                 else:
@@ -51,9 +52,7 @@ class CheckersModel:
                         key.append("W" if piece["king"] else "w")
                     else:
                         key.append("B" if piece["king"] else "b")
-        key.append(self.turn[0])
         return "".join(key)
-
 
     def reset_game(self):
         self.board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
@@ -61,6 +60,8 @@ class CheckersModel:
         self.turn = "white"
         self.history = []
         self.setup_pieces()
+
+        self.history.append(copy.deepcopy(self.board))
 
     def get_piece(self, row, col):
         return self.board[row][col]
@@ -79,7 +80,7 @@ class CheckersModel:
         self.check_make_king(new_row, new_col)
         self.turn = "black" if self.turn == "white" else "white"
 
-        self.history.append(self.board_to_key())
+        self.history.append(copy.deepcopy(self.board))
 
     def remove_captured_piece(self,old_row,old_col,new_row,new_col):
         mid_row = (old_row + new_row) // 2
@@ -272,13 +273,15 @@ class CheckersModel:
         if winner == "white":
             reward = 1.0
         elif winner == "black":
-            reward = 0.0
+            reward = -1.0
         else:
             reward = 0.5
 
         N = len(self.history)
-        for i, key in enumerate(self.history):
+
+        for i, board_snapshot in enumerate(self.history):
             discounted = reward * (self.gamma ** (N - i - 1))
+            key = self.board_to_key(board_snapshot)
 
             if key not in self.values:
                 self.values[key] = [discounted, 1]
@@ -358,4 +361,5 @@ if __name__ == "__main__":
     model.run_tournament(50)
     # model.run_tournament(50, gamemode="RANDOM")
     model.save_memory()
+
 
