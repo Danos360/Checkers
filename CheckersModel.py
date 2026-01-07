@@ -2,11 +2,13 @@ import random as rnd
 import os
 import json
 import copy
+
 from CheckersView import BOARD_SIZE
 
 class CheckersModel:
-    def __init__(self, gamma=0.95, memory_file="checkers_scores.json"):
+    def __init__(self, epsilon=0.95, gamma=0.95, memory_file="checkers_scores.json"):
         self.gamma = gamma
+        self.epsilon = epsilon
         self.memory_file = memory_file
 
         self.board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
@@ -14,10 +16,15 @@ class CheckersModel:
         self.selected = None
         self.history = []
 
+        self.gamemodes = {
+            "RANDOM": self.get_random_move,
+            "AGENT": self.get_agent_move,
+            "GREEDY": self.get_greedy_move
+        }
+
         self.values = self.load_memory()
 
         self.setup_pieces()
-
 
     def setup_pieces(self):
         for row in range(BOARD_SIZE):
@@ -133,9 +140,8 @@ class CheckersModel:
             for col in range(BOARD_SIZE):
                 piece = self.board[row][col]
                 if piece and piece["color"] == color:
-                    for new_row, new_col in self.get_moves(row, col, board=self.board, color=color):
+                    for new_row, new_col in self.get_moves(row, col):
                         score = self.score_move(row, col, new_row, new_col, color)
-
                         if score > best_score:
                             best_score = score
                             best_moves = [(row, col, new_row, new_col)]
@@ -144,6 +150,7 @@ class CheckersModel:
 
         return rnd.choice(best_moves) if best_moves else None
 
+
     def get_random_move(self, color):
         all_moves = []
 
@@ -151,10 +158,32 @@ class CheckersModel:
             for col in range(BOARD_SIZE):
                 piece = self.board[row][col]
                 if piece and piece["color"] == color:
-                    for new_row, new_col in self.get_moves(row, col, board=self.board, color=color):
+                    for new_row, new_col in self.get_moves(row, col):
                         all_moves.append((row, col, new_row, new_col))
 
         return rnd.choice(all_moves) if all_moves else None
+
+    def get_greedy_move(self, color):
+        if rnd.random() < self.epsilon:
+            return self.get_random_move(color)
+
+        best_score = -9999
+        best_moves = []
+
+        for row in range(BOARD_SIZE):
+            for col in range(BOARD_SIZE):
+                piece = self.board[row][col]
+                if piece and piece["color"] == color:
+                    for new_row, new_col in self.get_moves(row, col):
+                        simulated = self.simulate_move(row, col, new_row, new_col)
+                        score = self.evaluate_board(simulated)
+                        if score > best_score:
+                            best_score = score
+                            best_moves = [(row, col, new_row, new_col)]
+                        elif score == best_score:
+                            best_moves.append((row, col, new_row, new_col))
+
+        return rnd.choice(best_moves) if best_moves else None
 
     def score_move(self, old_r, old_c, new_r, new_c, color):
         score = 0
@@ -180,6 +209,12 @@ class CheckersModel:
             score += 10
         return score
 
+    def evaluate_board(self, board):
+        key = self.board_to_key(board)
+        if key in self.values:
+            return self.values[key][0]
+        return 0.0
+
     def check_make_king(self, row, col):
         piece = self.board[row][col]
         if not piece:
@@ -190,7 +225,6 @@ class CheckersModel:
 
         if piece["color"] == "white" and row == 0:
             piece["king"] = True
-
 
     def simulate_move(self, old_r, old_c, new_r, new_c):
         new_board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
@@ -279,9 +313,9 @@ class CheckersModel:
 
         N = len(self.history)
 
-        for i, board_snapshot in enumerate(self.history):
+        for i, board in enumerate(self.history):
             discounted = reward * (self.gamma ** (N - i - 1))
-            key = self.board_to_key(board_snapshot)
+            key = self.board_to_key(board)
 
             if key not in self.values:
                 self.values[key] = [discounted, 1]
@@ -290,7 +324,8 @@ class CheckersModel:
                 new = (old * count + discounted) / (count + 1)
                 self.values[key] = [new, count + 1]
 
-    def play_agent_vs_agent(self, gamemode="AGENTS", agent_color="white", max_moves=500):
+    def play_agent_vs_agent(self, white_play="AGENT", black_play="AGENT", agent_color="white", max_moves=500):
+
         self.reset_game()
         moves = 0
 
@@ -300,13 +335,12 @@ class CheckersModel:
                 self.score_game(result)
                 return result
 
-            if gamemode == "RANDOM":
-                if self.turn == agent_color:
-                    move = self.get_agent_move(self.turn)
-                else:
-                    move = self.get_random_move(self.turn)
+            if self.turn == "white":
+                move_sel = self.gamemodes[white_play]
             else:
-                move = self.get_agent_move(self.turn)
+                move_sel = self.gamemodes[black_play]
+
+            move = move_sel(self.turn)
 
             if not move:
                 return self.check_winner()
@@ -317,25 +351,13 @@ class CheckersModel:
         self.score_game("lock")
         return "lock (more moves)"
 
-    def run_tournament(self, rounds=100, gamemode="AGENTS", agent_color="white"):
-        if gamemode == "AGENTS":
-            results = {"white": 0, "black": 0, "lock": 0, "lock (more moves)": 0}
-        else:
-            results = {"agent": 0, "random": 0, "lock": 0, "lock (more moves)": 0}
+    def run_tournament(self, rounds=100, white_play="AGENT", black_play="AGENT", agent_color="white"):
+
+        results = {"white": 0, "black": 0, "lock": 0, "lock (more moves)": 0}
 
         for i in range(1, rounds + 1):
-            winner = self.play_agent_vs_agent(gamemode, agent_color)
-
-            if gamemode == "AGENTS":
-                results[winner] += 1
-            else:
-                if winner == agent_color:
-                    results["agent"] += 1
-                elif winner == ("black" if agent_color == "white" else "white"):
-                    results["random"] += 1
-                else:
-                    results[winner] += 1
-
+            winner = self.play_agent_vs_agent(white_play, black_play, agent_color)
+            results[winner] += 1
             print(f"Game {i}: {winner}")
 
         print("\nTOURNAMENT RESULTS")
@@ -358,8 +380,5 @@ class CheckersModel:
 
 if __name__ == "__main__":
     model = CheckersModel()
-    model.run_tournament(50)
-    # model.run_tournament(50, gamemode="RANDOM")
+    model.run_tournament(100, white_play="GREEDY", black_play="RANDOM")
     model.save_memory()
-
-
