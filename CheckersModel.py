@@ -150,7 +150,6 @@ class CheckersModel:
 
         return rnd.choice(best_moves) if best_moves else None
 
-
     def get_random_move(self, color):
         all_moves = []
 
@@ -324,7 +323,17 @@ class CheckersModel:
                 new = (old * count + discounted) / (count + 1)
                 self.values[key] = [new, count + 1]
 
-    def play_agent_vs_agent(self, white_play="AGENT", black_play="AGENT", agent_color="white", max_moves=500):
+    def load_memory(self):
+        if os.path.exists(self.memory_file):
+            with open(self.memory_file, "r") as f:
+                return json.load(f)
+        return {}
+
+    def save_memory(self):
+        with open(self.memory_file, "w") as f:
+            json.dump(self.values, f, indent=2)
+
+    def play_agent_vs_agent(self, white_play="AGENT", black_play="AGENT", max_moves=500):
 
         self.reset_game()
         moves = 0
@@ -351,12 +360,12 @@ class CheckersModel:
         self.score_game("lock")
         return "lock (more moves)"
 
-    def run_tournament(self, rounds=100, white_play="AGENT", black_play="AGENT", agent_color="white"):
+    def run_tournament(self, rounds=100, white_play="AGENT", black_play="AGENT"):
 
         results = {"white": 0, "black": 0, "lock": 0, "lock (more moves)": 0}
 
         for i in range(1, rounds + 1):
-            winner = self.play_agent_vs_agent(white_play, black_play, agent_color)
+            winner = self.play_agent_vs_agent(white_play, black_play)
             results[winner] += 1
             print(f"Game {i}: {winner}")
 
@@ -367,18 +376,7 @@ class CheckersModel:
 
         return results
 
-    def load_memory(self):
-        if os.path.exists(self.memory_file):
-            with open(self.memory_file, "r") as f:
-                return json.load(f)
-        return {}
-
-    def save_memory(self):
-        with open(self.memory_file, "w") as f:
-            json.dump(self.values, f, indent=2)
-
-
 if __name__ == "__main__":
     model = CheckersModel()
-    model.run_tournament(100, white_play="GREEDY", black_play="RANDOM")
+    model.run_tournament(100, white_play="GREEDY", black_play="GREEDY")
     model.save_memory()

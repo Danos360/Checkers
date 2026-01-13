@@ -78,10 +78,7 @@ class CheckersController:
         self.view.draw_board(self.model.board)
 
         QTimer.singleShot(
-            1000,
-            lambda: self.end_agent_move(
-                old_row, old_col, new_row, new_col
-            )
+            1000, lambda: self.end_agent_move(old_row, old_col, new_row, new_col)
         )
 
     def end_agent_move(self, old_row, old_col, new_row, new_col):
