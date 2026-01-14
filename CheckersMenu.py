@@ -27,9 +27,9 @@ class CheckersMenu(QMainWindow):
         super().__init__()
 
         self.backgrounds = [
-            "Game-Design/checkers-BG1.png",
-            "Game-Design/checkers-BG2.png",
-            "Game-Design/checkers-BG3.png"
+            "Game-Design/checkers-BG1-mini.png",
+            "Game-Design/checkers-BG2-mini.png",
+            "Game-Design/checkers-BG3-mini.png"
 
         ]
 

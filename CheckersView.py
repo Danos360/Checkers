@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt
 
 WINDOW_WIDTH = 464
 WINDOW_HEIGHT = 464
-BOARD_SIZE = 8
+BOARD_SIZE = 6
 CELL_SIZE = WINDOW_WIDTH // BOARD_SIZE
 
 WINDOW_TITLE = "Checkers Game"
@@ -19,21 +19,21 @@ SOUNDON_ICON = "Game-Design/soundon-icon.png"
 SOUNDOFF_ICON = "Game-Design/soundoff-icon.png"
 
 SKIN_SETS = {
-    "Game-Design/checkers-BG1.png": {
+    "Game-Design/checkers-BG1-mini.png": {
         "black": "Game-Design/checkers-black.png",
         "white": "Game-Design/checkers-white.png",
         "black_king": "Game-Design/checkers-blackKing.png",
         "white_king": "Game-Design/checkers-whiteKing.png",
     },
 
-    "Game-Design/checkers-BG2.png": {
+    "Game-Design/checkers-BG2-mini.png": {
         "black": "Game-Design/checkers-black2.png",
         "white": "Game-Design/checkers-white2.png",
         "black_king": "Game-Design/checkers-blackKing2.png",
         "white_king": "Game-Design/checkers-whiteKing2.png",
     },
 
-    "Game-Design/checkers-BG3.png": {
+    "Game-Design/checkers-BG3-mini.png": {
         "black": "Game-Design/checkers-black2.png",
         "white": "Game-Design/checkers-white2.png",
         "black_king": "Game-Design/checkers-blackKing2.png",
@@ -57,7 +57,7 @@ class CheckersView(QMainWindow):
 
         self.end_screen = None
 
-        self.skin = SKIN_SETS.get(bg_image, SKIN_SETS["Game-Design/checkers-BG1.png"])
+        self.skin = SKIN_SETS.get(bg_image, SKIN_SETS["Game-Design/checkers-BG1-mini.png"])
 
         self.label = QLabel(self)
         bg = QPixmap(os.path.abspath(bg_image))

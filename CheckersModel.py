@@ -2,11 +2,13 @@ import random as rnd
 import os
 import json
 import copy
+import statistics
+from statistics import stdev
 
 from CheckersView import BOARD_SIZE
 
 class CheckersModel:
-    def __init__(self, epsilon=0.95, gamma=0.95, memory_file="checkers_scores.json"):
+    def __init__(self, epsilon=0.95, gamma=0.95, memory_file="checkers_score_greedy.json"):
         self.gamma = gamma
         self.epsilon = epsilon
         self.memory_file = memory_file
@@ -15,6 +17,7 @@ class CheckersModel:
         self.turn = "white"
         self.selected = None
         self.history = []
+        self.count = 0
 
         self.gamemodes = {
             "RANDOM": self.get_random_move,
@@ -30,9 +33,9 @@ class CheckersModel:
         for row in range(BOARD_SIZE):
             for col in range(BOARD_SIZE):
                 if (row + col) % 2 == 1:
-                    if row < 3:
+                    if row < 2:
                         self.board[row][col] = {"color": "black", "king": False}
-                    elif row > 4:
+                    elif row > BOARD_SIZE - 3:
                         self.board[row][col] = {"color": "white", "king": False}
 
     def print(self):
@@ -212,6 +215,7 @@ class CheckersModel:
         key = self.board_to_key(board)
         if key in self.values:
             return self.values[key][0]
+        self.count += 1
         return 0.0
 
     def check_make_king(self, row, col):
@@ -363,10 +367,14 @@ class CheckersModel:
     def run_tournament(self, rounds=100, white_play="AGENT", black_play="AGENT"):
 
         results = {"white": 0, "black": 0, "lock": 0, "lock (more moves)": 0}
+        list = []
 
         for i in range(1, rounds + 1):
             winner = self.play_agent_vs_agent(white_play, black_play)
             results[winner] += 1
+            # if i % 1000 == 0:
+            #     print(f"Game {i}")
+            list.append(self.count/len(self.history))
             print(f"Game {i}: {winner}")
 
         print("\nTOURNAMENT RESULTS")
@@ -374,9 +382,16 @@ class CheckersModel:
         for k, v in results.items():
             print(f"{k.upper()}: {v}")
 
+        print(f"unknowen board count {self.count}")
+
+        print(f"Mean new boards: {statistics.mean(list)}")
+        print(f"STD new boards: {stdev(list)}")
         return results
 
 if __name__ == "__main__":
     model = CheckersModel()
-    model.run_tournament(100, white_play="GREEDY", black_play="GREEDY")
-    model.save_memory()
+    model.run_tournament(100, white_play="GREEDY", black_play="RANDOM")
+    # model.save_memory()
+    #
+    # data = model.load_memory()
+    # print(len(data))
