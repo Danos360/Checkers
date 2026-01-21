@@ -8,7 +8,7 @@ from statistics import stdev
 from CheckersView import BOARD_SIZE
 
 class CheckersModel:
-    def __init__(self, epsilon=0.95, gamma=0.95, memory_file="checkers_score_greedy.json"):
+    def __init__(self, epsilon=0.95, gamma=0.95, memory_file="checkers_score_huristic.json"):
         self.gamma = gamma
         self.epsilon = epsilon
         self.memory_file = memory_file
@@ -372,10 +372,10 @@ class CheckersModel:
         for i in range(1, rounds + 1):
             winner = self.play_agent_vs_agent(white_play, black_play)
             results[winner] += 1
-            # if i % 1000 == 0:
-            #     print(f"Game {i}")
+            if i % 1000 == 0:
+                print(f"Game {i}")
             list.append(self.count/len(self.history))
-            print(f"Game {i}: {winner}")
+            # print(f"Game {i}: {winner}")
 
         print("\nTOURNAMENT RESULTS")
         print("------------------")
@@ -390,8 +390,8 @@ class CheckersModel:
 
 if __name__ == "__main__":
     model = CheckersModel()
-    model.run_tournament(100, white_play="GREEDY", black_play="RANDOM")
-    # model.save_memory()
+    model.run_tournament(100000, white_play="AGENT", black_play="RANDOM")
+    model.save_memory()
     #
     # data = model.load_memory()
     # print(len(data))
