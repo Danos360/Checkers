@@ -1,28 +1,37 @@
 import json
 import torch
 import torch.nn as nn
+import os
 import torch.optim as optim
-from torch.utils.data import TensorDataset, DataLoader
-import matplotlib.pyplot as pltH
-
-import json
-import torch
-import torch.nn as nn
-import torch.optim as optim
+from sympy import evaluate
 from torch.utils.data import TensorDataset, DataLoader
 import matplotlib.pyplot as plt
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
+CHECKPOINT_FILE = "checkers_checkpoint.pth"
+
+class CheckersNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layer1 = nn.Linear(180, 256)
+        self.layer2 = nn.Linear(256, 512)
+        self.layer3 = nn.Linear(512, 256)
+        self.layer4 = nn.Linear(256, 64)
+        self.output = nn.Linear(64, 1)
+
+    def forward(self, x):
+        x = torch.relu(self.layer1(x))
+        x = torch.relu(self.layer2(x))
+        x = torch.relu(self.layer3(x))
+        x = torch.relu(self.layer4(x))
+        return torch.sigmoid(self.output(x))
 
 def load_and_encode_data(file_path):
-    """
-    Loads data from JSON and converts it to One-Hot Encoded Tensors
-    """
     print(f"Reading data from {file_path}...")
 
-    with open("/checkers_score_huristic.json", "r") as f:
+    with open("CheckersData/checkers_score_huristic.json", "r") as f:
         data = json.load(f)
 
     X = []
@@ -51,96 +60,99 @@ def load_and_encode_data(file_path):
         Y.append([value[0]])
     return torch.tensor(X), torch.tensor(Y)
 
-
-# Model definition
-class CheckersNet(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.layer1 = nn.Linear(180, 256)
-        self.layer2 = nn.Linear(256, 512)
-        self.layer3 = nn.Linear(512, 256)
-        self.layer4 = nn.Linear(256, 64)
-        self.output = nn.Linear(64, 1)
-
-    def forward(self, x):
-        # Layer 1
-        x = self.layer1(x)
-        x = torch.relu(x)
-
-        # Layer 2
-        x = self.layer2(x)
-        x = torch.relu(x)
-
-        # Layer 3
-        x = self.layer3(x)
-        x = torch.relu(x)
-
-        # Layer 4
-        x = self.layer4(x)
-        x = torch.relu(x)
-
-        # Output layer
-        x = self.output(x)
-        x = torch.sigmoid(x)
-
-        return x
-
-# Training
-def train(model, loader, epochs=1000, learning_rate=0.01):
+def train(model, train_loader, test_loader, epochs=101, learning_rate=0.01):
     loss_fn = nn.MSELoss()
     optimizer = optim.SGD(model.parameters(), lr=learning_rate)
 
-    loss_history = []
-    print("\nStarting Training Loop...")
-    for epoch in range(epochs):
-        total_loss = 0
+    start_epoch = 0
+    trian_loss_history = []
+    test_loss_history = []
 
+    if os.path.exists(CHECKPOINT_FILE):
+        checkpoint = torch.load(CHECKPOINT_FILE, map_location=device)
+        model.load_state_dict(checkpoint["model"])
+        optimizer.load_state_dict(checkpoint["optimizer"])
+        start_epoch = checkpoint["epoch"] + 1
+        loss_history = checkpoint["loss_history"]
+        print(f"Resuming from epoch {start_epoch}")
+
+    for epoch in range(start_epoch, epochs):
+        total_loss = 0
+        model.train()
         for batch_X, batch_Y in loader:
             batch_X = batch_X.to(device)
             batch_Y = batch_Y.to(device)
 
             optimizer.zero_grad()
-            # Forward pass
             y_pred = model(batch_X)
-            # Calculate loss
             loss = loss_fn(y_pred, batch_Y)
-            # Backward pass
             loss.backward()
-            # Weight update
             optimizer.step()
 
             total_loss += loss.item()
 
-        avg_loss = total_loss / len(loader)
-        print("Epoch loss:" , avg_loss)
-        loss_history.append(avg_loss)
+        avg_loss = total_loss / len(train_loader)
+        train_loss_history.append(avg_loss)
 
         if epoch % 50 == 0:
-            print(f"Epoch {epoch} | Average Loss: {avg_loss:.5f}")
+            avg_test_loss = evaluate(model, test_loader, device)
+            test_loss_history.append(avg_test_loss)
+            print(f"Epoch {epoch} | Loss: {avg_loss:.6f}")
 
-    return loss_history
+        torch.save({
+            "epoch": epoch,
+            "model": model.state_dict(),
+            "optimizer": optimizer.state_dict(),
+            "loss_history": trian_loss_history
+        }, CHECKPOINT_FILE)
+
+    return trian_loss_history, test_loss_history
 
 
-# Main
+def evaluate(model, loader, device):
+    model.eval()
+    loss_fn = nn.MSELoss()
+    total_loss = 0
+
+    with torch.no_grad():
+        for batch_X, batch_Y in loader:
+            batch_X = batch_X.to(device)
+            batch_Y = batch_Y.to(device)
+            prediction = model(batch_X)
+            loss = loss_fn(prediction, batch_Y)
+            total_loss += loss.item()
+
+    avg_loss = total_loss / len(loader)
+    model.train()
+    return avg_loss
+
 if __name__ == "__main__":
-    # 1. Prepare Data
-    X, Y = load_and_encode_data('/checkers_score_huristic.json.json')
+    X, Y = load_and_encode_data('CheckersData/checkers_score_huristic.json')
 
-    # 2. Configure dataloader
     dataset = TensorDataset(X, Y)
-    loader = DataLoader(dataset, batch_size=128, shuffle=True)
+    train_size = int(len(dataset) * 0.7)
+    test_size = len(dataset) - train_size
+    train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
 
-    # 3. Instantiate Model
+    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=128, shuffle=True)
+
     net = CheckersNet().to(device)
 
-    # 4. Execute Training
-    loss_history = train(net, loader)
+    trian_loss_history, test_loss_history = train(net, train_loader, test_loader)
 
-    # 5. Save the result
     torch.save(net.state_dict(), "checkersModel.pth")
     print("\nModel saved to checkersModel.pth")
 
-    # 6. Plot loss over epochs
-    plt.plot(loss_history)
-    plt.title('Loss over epochs')
+    plt.figure()
+    epoch_axis = list(range(len(trian_loss_history)))
+    plt.plot(epoch_axis, trian_loss_history, label="Train Loss")
+
+    eval_axis = list(range(0, len(trian_loss_history), 50))
+    plt.plot(eval_axis, test_loss_history, label="Test Loss")
+
+    plt.title('Loss over epochs: train and test')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss (MSE)')
+    plt.legend()
     plt.show()

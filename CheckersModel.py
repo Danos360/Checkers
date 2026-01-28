@@ -5,10 +5,13 @@ import copy
 import statistics
 from statistics import stdev
 
+import torch
+
 from CheckersView import BOARD_SIZE
+from CheckersNN import CheckersNet
 
 class CheckersModel:
-    def __init__(self, epsilon=0.95, gamma=0.95, memory_file="checkers_score_huristic.json"):
+    def __init__(self, epsilon=0.95, gamma=0.95, memory_file="CheckersData/checkers_score_huristic.json", nn_model_file="CheckersData/checkersModel.pth"):
         self.gamma = gamma
         self.epsilon = epsilon
         self.memory_file = memory_file
@@ -19,14 +22,25 @@ class CheckersModel:
         self.history = []
         self.count = 0
 
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.nn = CheckersNet().to(self.device)
+
+        if os.path.exists(nn_model_file):
+            self.nn.load_state_dict(torch.load(nn_model_file, map_location=self.device))
+            self.nn.eval()
+            print("Loaded NN model")
+        else:
+            print("NN model not found")
+
+
         self.gamemodes = {
             "RANDOM": self.get_random_move,
             "AGENT": self.get_agent_move,
-            "GREEDY": self.get_greedy_move
+            "GREEDY": self.get_greedy_move,
+            "GREEDY_NN": self.get_greedy_nn_move
         }
 
         self.values = self.load_memory()
-
         self.setup_pieces()
 
     def setup_pieces(self):
@@ -72,6 +86,9 @@ class CheckersModel:
         self.setup_pieces()
 
         self.history.append(copy.deepcopy(self.board))
+        #print("Game started")
+        #self.print()
+
 
     def get_piece(self, row, col):
         return self.board[row][col]
@@ -88,9 +105,11 @@ class CheckersModel:
             self.remove_captured_piece(old_row, old_col, new_row, new_col)
 
         self.check_make_king(new_row, new_col)
+        #print(f"Turn of {self.turn}")
         self.turn = "black" if self.turn == "white" else "white"
 
         self.history.append(copy.deepcopy(self.board))
+        #self.print()
 
     def remove_captured_piece(self,old_row,old_col,new_row,new_col):
         mid_row = (old_row + new_row) // 2
@@ -187,6 +206,32 @@ class CheckersModel:
 
         return rnd.choice(best_moves) if best_moves else None
 
+    def get_greedy_nn_move(self, color):
+        best_score = -9999
+        best_moves = []
+
+        for row in range(BOARD_SIZE):
+            for col in range(BOARD_SIZE):
+                piece = self.board[row][col]
+                if piece and piece["color"] == color:
+                    for new_row, new_col in self.get_moves(row, col):
+                        simulated = self.simulate_move(row, col, new_row, new_col)
+                        key = self.board_to_key(simulated)
+
+                        if key in self.values:
+                            score = self.values[key][0]
+                        else:
+                            self.count += 1
+                            score = self.nn_evaluate(simulated)
+
+                        if score > best_score:
+                            best_score = score
+                            best_moves = [(row, col, new_row, new_col)]
+                        elif score == best_score:
+                            best_moves.append((row, col, new_row, new_col))
+
+        return rnd.choice(best_moves) if best_moves else None
+
     def score_move(self, old_r, old_c, new_r, new_c, color):
         score = 0
         piece = self.board[old_r][old_c]
@@ -217,6 +262,21 @@ class CheckersModel:
             return self.values[key][0]
         self.count += 1
         return 0.0
+
+    def nn_evaluate(self, board):
+        encoded_board = []
+        for row in board:
+            for piece in row:
+                if piece is None:
+                    encoded_board.extend([1, 0, 0, 0, 0])
+                elif piece["color"] == "white":
+                    encoded_board.extend([0, 1, 0, 0, 0] if not piece["king"] else [0, 0, 0, 1, 0])
+                else:
+                    encoded_board.extend([0, 0, 1, 0, 0] if not piece["king"] else [0, 0, 0, 0, 1])
+
+        x = torch.tensor(encoded_board, dtype=torch.float32).to(self.device)
+        with torch.no_grad():
+            return float(self.nn(x))
 
     def check_make_king(self, row, col):
         piece = self.board[row][col]
@@ -314,10 +374,10 @@ class CheckersModel:
         else:
             reward = 0.5
 
-        N = len(self.history)
+        n = len(self.history)
 
         for i, board in enumerate(self.history):
-            discounted = reward * (self.gamma ** (N - i - 1))
+            discounted = reward * (self.gamma ** (n - i - 1))
             key = self.board_to_key(board)
 
             if key not in self.values:
@@ -367,14 +427,14 @@ class CheckersModel:
     def run_tournament(self, rounds=100, white_play="AGENT", black_play="AGENT"):
 
         results = {"white": 0, "black": 0, "lock": 0, "lock (more moves)": 0}
-        list = []
+        mean_score_list = []
 
         for i in range(1, rounds + 1):
             winner = self.play_agent_vs_agent(white_play, black_play)
             results[winner] += 1
             if i % 1000 == 0:
                 print(f"Game {i}")
-            list.append(self.count/len(self.history))
+            mean_score_list.append(self.count/len(self.history))
             # print(f"Game {i}: {winner}")
 
         print("\nTOURNAMENT RESULTS")
@@ -384,13 +444,13 @@ class CheckersModel:
 
         print(f"unknowen board count {self.count}")
 
-        print(f"Mean new boards: {statistics.mean(list)}")
-        print(f"STD new boards: {stdev(list)}")
+        print(f"Mean new boards: {statistics.mean(mean_score_list)}")
+        print(f"STD new boards: {stdev(mean_score_list)}")
         return results
 
 if __name__ == "__main__":
     model = CheckersModel()
-    model.run_tournament(100000, white_play="AGENT", black_play="RANDOM")
+    model.run_tournament(10000, white_play="GREEDY_NN", black_play="GREEDY")
     model.save_memory()
     #
     # data = model.load_memory()

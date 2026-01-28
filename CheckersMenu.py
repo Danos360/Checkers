@@ -1,9 +1,10 @@
 import sys
 import os
 
-from PySide6.QtCore import Qt, QSize
+from PySide6.QtCore import Qt, QSize, QUrl
 from PySide6.QtGui import QPixmap, QIcon, QPainter, QPainterPath
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QPushButton, QWidget, QVBoxLayout
+from PySide6.QtMultimedia import QSoundEffect
 from CheckersModel import CheckersModel
 from CheckersView import CheckersView
 from CheckersController import CheckersController
@@ -21,6 +22,9 @@ CHANGEBG_BUTTON_IMAGE = "Game-Design/changebg_button.png"
 SETTINGS_ICON = "Game-Design/settings-icon.png"
 SOUNDON_ICON = "Game-Design/soundon-icon.png"
 SOUNDOFF_ICON = "Game-Design/soundoff-icon.png"
+SOUND_MENU_FILE = "Game-Sounds/Menu-Sound.wav"
+SOUND_CLICK_FILE = "Game-Sounds/Click_Sound.wav"
+
 
 class CheckersMenu(QMainWindow):
     def __init__(self):
@@ -47,6 +51,12 @@ class CheckersMenu(QMainWindow):
         logo_path = os.path.abspath(CHECKERS_LOGO_IMAGE)
         logo_pixmap = QPixmap(logo_path)
 
+        self.menu_sound = QSoundEffect()
+        self.click_sound = QSoundEffect()
+        self.menu_sound.setSource(QUrl.fromLocalFile(SOUND_MENU_FILE))
+        self.click_sound.setSource(QUrl.fromLocalFile(SOUND_CLICK_FILE))
+        self.menu_sound.setLoopCount(-2)
+
         self.label = QLabel(self)
         self.label.setPixmap(pixmap)
         self.label.setAlignment(Qt.AlignCenter)
@@ -64,6 +74,9 @@ class CheckersMenu(QMainWindow):
 
         self.update_bg_preview()
         self.update_gm_preview()
+
+        if self.sound_enabled:
+            self.menu_sound.play()
 
     def setup_layout(self, sound_state):
         self.start_button = QPushButton(self.label)
@@ -123,6 +136,7 @@ class CheckersMenu(QMainWindow):
     def next_background(self):
         self.bg_num = (self.bg_num+1) % len(self.backgrounds)
         self.update_bg_preview()
+        self.click_sound.play()
 
     def update_bg_preview(self):
         size = self.bg_preview.size()
@@ -144,6 +158,7 @@ class CheckersMenu(QMainWindow):
     def next_gamemode(self):
         self.game_mode = "agent" if self.game_mode == "1v1" else "1v1"
         self.update_gm_preview()
+        self.click_sound.play()
 
     def update_gm_preview(self):
         self.gm_preview.setText(self.game_mode.upper())
@@ -152,6 +167,7 @@ class CheckersMenu(QMainWindow):
 
     def toggle_settings_panel(self):
         self.settings_panel.setVisible(not self.settings_panel.isVisible())
+        self.click_sound.play()
 
     def update_sound_icon(self):
         icon = SOUNDON_ICON if self.sound_enabled else SOUNDOFF_ICON
@@ -159,15 +175,22 @@ class CheckersMenu(QMainWindow):
 
     def toggle_sound(self):
         self.sound_enabled = not self.sound_enabled
+
+        if self.sound_enabled:
+            self.menu_sound.play()
+        else:
+            self.menu_sound.stop()
+
         self.update_sound_icon()
 
     def start_game(self):
         selected_bg = self.backgrounds[self.bg_num-1]
 
         model = CheckersModel()
-        view = CheckersView(selected_bg, self.sound_enabled)
+        view = CheckersView(selected_bg)
         controller = CheckersController(model, view, self.game_mode)
 
+        self.menu_sound.stop()
         view.show()
         self.close()
 
