@@ -1,4 +1,5 @@
 import os
+import random
 from PySide6.QtWidgets import QMainWindow, QLabel, QPushButton, QMessageBox, QWidget, QVBoxLayout, QHBoxLayout
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtCore import QSize, QUrl, Qt
@@ -17,7 +18,20 @@ SETTINGS_ICON = "Game-Design/settings-icon.png"
 BACK_ICON = "Game-Design/back-icon.png"
 SOUNDON_ICON = "Game-Design/soundon-icon.png"
 SOUNDOFF_ICON = "Game-Design/soundoff-icon.png"
+INFO_ICON = "Game-Design/info-icon.png"
 SOUND_CLICK_FILE = "Game-Sounds/Click_Sound.wav"
+SOUND_MOVE = "Game-Sounds/make-move.wav"
+SOUND_KING = "Game-Sounds/make-king.wav"
+SOUND_GAME_START = "Game-Sounds/game-start1.wav"
+SOUND_GAME_WIN = [
+    "Game-Sounds/game-win1.wav",
+    "Game-Sounds/game-win2.wav"
+]
+SOUND_GAME_LOSE = [
+    "Game-Sounds/game-over1.wav",
+    "Game-Sounds/game-over2.wav",
+    "Game-Sounds/game-over3.wav"
+]
 
 SKIN_SETS = {
     "Game-Design/checkers-BG1-mini.png": {
@@ -43,7 +57,7 @@ SKIN_SETS = {
 }
 
 class CheckersView(QMainWindow):
-    def __init__(self, bg_image):
+    def __init__(self, bg_image, sound_enabled=True):
         super().__init__()
         self.setFixedSize(600, 600)
         self.setWindowTitle(WINDOW_TITLE)
@@ -57,6 +71,7 @@ class CheckersView(QMainWindow):
         self.shadow_buttons = []
 
         self.end_screen = None
+        self.sound_enabled = sound_enabled
 
         self.skin = SKIN_SETS.get(bg_image, SKIN_SETS["Game-Design/checkers-BG1-mini.png"])
 
@@ -69,6 +84,19 @@ class CheckersView(QMainWindow):
         self.click_sound = QSoundEffect()
         self.click_sound.setSource(QUrl.fromLocalFile(SOUND_CLICK_FILE))
 
+        self.move_sound = QSoundEffect()
+        self.move_sound.setSource(QUrl.fromLocalFile(SOUND_MOVE))
+
+        self.king_sound = QSoundEffect()
+        self.king_sound.setSource(QUrl.fromLocalFile(SOUND_KING))
+
+        self.game_start_sound = QSoundEffect()
+        self.game_start_sound.setSource(QUrl.fromLocalFile(SOUND_GAME_START))
+
+        self.win_sound = QSoundEffect()
+        self.lose_sound = QSoundEffect()
+
+        self.play_game_start()
         self.setup_layout()
 
     def setup_layout(self):
@@ -76,7 +104,7 @@ class CheckersView(QMainWindow):
         self.top_bar.setGeometry(0, 0, 600, 50)
 
         self.settings_panel = QWidget(self)
-        self.settings_panel.setGeometry(542, 50, 150, 100)
+        self.settings_panel.setGeometry(542, 50, 150, 160)
         self.settings_panel.hide()
 
         top_layout = QHBoxLayout(self.top_bar)
@@ -85,7 +113,7 @@ class CheckersView(QMainWindow):
 
         panel_layout = QVBoxLayout(self.settings_panel)
         panel_layout.setContentsMargins(10, 10, 10, 10)
-        panel_layout.setSpacing(8)
+        panel_layout.setSpacing(5)
 
         self.turn_text = QLabel("Turn: WHITE")
         self.timer_text = QLabel("Time: 00:00")
@@ -100,8 +128,9 @@ class CheckersView(QMainWindow):
 
         self.settings_btn = QPushButton()
         self.menu_btn = QPushButton()
+        self.sound_btn = QPushButton()
         self.info_btn = QPushButton()
-        for btn in (self.settings_btn, self.menu_btn, self.info_btn):
+        for btn in (self.settings_btn, self.menu_btn, self.sound_btn, self.info_btn):
             btn.setFlat(True)
             btn.setStyleSheet("QPushButton { padding: 0px; border: none; }")
             btn.setFixedSize(36, 36)
@@ -109,18 +138,21 @@ class CheckersView(QMainWindow):
 
         self.settings_btn.setIcon(QIcon(SETTINGS_ICON))
         self.menu_btn.setIcon(QIcon(BACK_ICON))
-        self.info_btn.setIcon(QIcon(SOUNDON_ICON))
+        self.sound_btn.setIcon(QIcon(SOUNDON_ICON))
+        self.info_btn.setIcon(QIcon(INFO_ICON))
 
         self.settings_btn.clicked.connect(self.toggle_settings_panel)
         self.menu_btn.clicked.connect(self.back_to_menu)
+        self.sound_btn.clicked.connect(self.toggle_sound)
 
         top_layout.addWidget(self.turn_text)
-        top_layout.addSpacing(10)
+        top_layout.addSpacing(60)
         top_layout.addWidget(self.timer_text)
         top_layout.addStretch()
         top_layout.addWidget(self.settings_btn)
 
         panel_layout.addWidget(self.menu_btn)
+        panel_layout.addWidget(self.sound_btn)
         panel_layout.addWidget(self.info_btn)
 
     def draw_board(self, board):
@@ -197,13 +229,21 @@ class CheckersView(QMainWindow):
 
     def toggle_settings_panel(self):
         self.settings_panel.setVisible(not self.settings_panel.isVisible())
-        self.click_sound.play()
+        self.play_click_sound()
+
+    def update_sound_icon(self):
+        icon = SOUNDON_ICON if self.sound_enabled else SOUNDOFF_ICON
+        self.sound_btn.setIcon(QIcon(icon))
+
+    def toggle_sound(self):
+        self.sound_enabled = not self.sound_enabled
+        self.update_sound_icon()
 
     def back_to_menu(self):
         self.close()
 
         from CheckersMenu import CheckersMenu
-        self.menu = CheckersMenu()
+        self.menu = CheckersMenu(self.sound_enabled)
         self.menu.show()
 
     def show_end_screen(self, winner, timer, on_restart, on_menu):
@@ -242,3 +282,32 @@ class CheckersView(QMainWindow):
         layout.addWidget(menu_btn)
 
         self.end_screen.show()
+
+    def play_click_sound(self):
+        self.click_sound.play()
+
+    def play_move_sound(self):
+        if self.sound_enabled:
+            self.move_sound.play()
+
+    def play_king_sound(self):
+        if self.sound_enabled:
+            self.king_sound.play()
+
+    def play_game_start(self):
+        if self.sound_enabled:
+            self.game_start_sound.play()
+
+    def play_game_win(self):
+        if self.sound_enabled:
+            self.win_sound.setSource(QUrl.fromLocalFile(
+                random.choice(SOUND_GAME_WIN)
+            ))
+            self.win_sound.play()
+
+    def play_game_lose(self):
+        if self.sound_enabled:
+            self.lose_sound.setSource(QUrl.fromLocalFile(
+                random.choice(SOUND_GAME_LOSE)
+            ))
+            self.lose_sound.play()

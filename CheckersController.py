@@ -1,11 +1,7 @@
 from PySide6.QtCore import QTimer
 
 class CheckersController:
-    def __init__(self, model, view, game_mode="agent", tournament_rounds=0):
-        self.model = model
-        self.view = view
-        self.game_mode = game_mode
-
+    def __init__(self, model, view, game_mode="agent"):
         self.model = model
         self.view = view
         self.game_mode = game_mode
@@ -61,14 +57,19 @@ class CheckersController:
         if (row, col) not in valid_moves:
             return
 
-        self.model.move_piece(old_row, old_col, row, col)
+        became_king = self.model.move_piece(old_row, old_col, row, col)
+        self.view.play_move_sound()
+
+        if became_king:
+            self.view.play_king_sound()
+
         self.model.selected = None
         self.view.clear_shadows()
 
         self.make_move()
 
     def agent_move(self):
-        move = self.model.get_agent_move(self.agent_color)
+        move = self.model.get_greedy_nn_move(self.agent_color)
         if not move:
             return
 
@@ -83,7 +84,12 @@ class CheckersController:
 
     def end_agent_move(self, old_row, old_col, new_row, new_col):
         self.view.clear_shadows()
-        self.model.move_piece(old_row, old_col, new_row, new_col)
+        became_king = self.model.move_piece(old_row, old_col, new_row, new_col)
+        self.view.play_move_sound()
+
+        if became_king:
+            self.view.play_king_sound()
+
         self.make_move()
 
     def make_move(self):
@@ -95,6 +101,10 @@ class CheckersController:
             minutes = self.timer // 60
             seconds = self.timer % 60
             time = f"{minutes:02d}:{seconds:02d}"
+            if winner == "white":
+                self.view.play_game_win()
+            else:
+                self.view.play_game_lose()
 
             self.view.show_end_screen(winner, time,
                 on_restart=self.restart_game,
@@ -106,6 +116,7 @@ class CheckersController:
 
     def restart_game(self):
         self.model.reset_game()
+        self.view.play_game_start()
         self.timer = 0
         self.view.timer_text.setText("Time: 00:00")
         self.game_timer.start()

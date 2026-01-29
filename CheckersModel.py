@@ -11,7 +11,7 @@ from CheckersView import BOARD_SIZE
 from CheckersNN import CheckersNet
 
 class CheckersModel:
-    def __init__(self, epsilon=0.95, gamma=0.95, memory_file="CheckersData/checkers_score_huristic.json", nn_model_file="CheckersData/checkersModel.pth"):
+    def __init__(self, epsilon=0.95, gamma=0.95, memory_file="CheckersData/checkers_score_huristic.json", nn_model_file="CheckersData/checkersModel6x6.pth"):
         self.gamma = gamma
         self.epsilon = epsilon
         self.memory_file = memory_file
@@ -89,14 +89,13 @@ class CheckersModel:
         #print("Game started")
         #self.print()
 
-
     def get_piece(self, row, col):
         return self.board[row][col]
 
     def move_piece(self, old_row, old_col, new_row, new_col):
         piece = self.board[old_row][old_col]
         if not piece:
-            return
+            return False
 
         self.board[old_row][old_col] = None
         self.board[new_row][new_col] = piece
@@ -104,12 +103,14 @@ class CheckersModel:
         if abs(old_row - new_row) == 2:
             self.remove_captured_piece(old_row, old_col, new_row, new_col)
 
-        self.check_make_king(new_row, new_col)
+        became_king = self.check_make_king(new_row, new_col)
+
         #print(f"Turn of {self.turn}")
         self.turn = "black" if self.turn == "white" else "white"
-
         self.history.append(copy.deepcopy(self.board))
         #self.print()
+
+        return became_king
 
     def remove_captured_piece(self,old_row,old_col,new_row,new_col):
         mid_row = (old_row + new_row) // 2
@@ -279,15 +280,23 @@ class CheckersModel:
             return float(self.nn(x))
 
     def check_make_king(self, row, col):
+        became_king = False
         piece = self.board[row][col]
         if not piece:
-            return
+            return None
+
+        if piece["king"]:
+            return became_king
 
         if piece["color"] == "black" and row == BOARD_SIZE - 1:
             piece["king"] = True
+            became_king = True
 
         if piece["color"] == "white" and row == 0:
             piece["king"] = True
+            became_king = True
+
+        return became_king
 
     def simulate_move(self, old_r, old_c, new_r, new_c):
         new_board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
@@ -391,10 +400,12 @@ class CheckersModel:
         if os.path.exists(self.memory_file):
             with open(self.memory_file, "r") as f:
                 return json.load(f)
+            # with open("CheckersData/checkers_score_huristic-greedy.json", "r") as f:
+            #     return json.load(f)
         return {}
 
     def save_memory(self):
-        with open(self.memory_file, "w") as f:
+        with open("CheckersData/checkers_score_huristic.json", "w") as f:
             json.dump(self.values, f, indent=2)
 
     def play_agent_vs_agent(self, white_play="AGENT", black_play="AGENT", max_moves=500):
@@ -450,7 +461,7 @@ class CheckersModel:
 
 if __name__ == "__main__":
     model = CheckersModel()
-    model.run_tournament(10000, white_play="GREEDY_NN", black_play="GREEDY")
+    model.run_tournament(100000, white_play="AGENT", black_play="AGENT")
     model.save_memory()
     #
     # data = model.load_memory()
