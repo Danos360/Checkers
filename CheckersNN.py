@@ -141,7 +141,7 @@ def evaluate(model, loader, device):
     return avg_loss
 
 if __name__ == "__main__":
-    X, Y = load_and_encode_data('CheckersData/checkers_score_huristic.json')
+    X, Y = load_and_encode_data('CheckersData/checkers_score_huristic6x6.json')
 
     dataset = TensorDataset(X, Y)
     train_size = int(len(dataset) * 0.7)

@@ -11,7 +11,8 @@ from CheckersView import BOARD_SIZE
 from CheckersNN import CheckersNet
 
 class CheckersModel:
-    def __init__(self, epsilon=0.95, gamma=0.95, memory_file="CheckersData/checkers_score_huristic.json", nn_model_file="CheckersData/checkersModel6x6.pth"):
+    # def __init__(self, epsilon=0.95, gamma=0.95, memory_file="CheckersData/checkers_score_huristic8x8.json", nn_model_file="CheckersData/checkersModel8x8.pth"):
+    def __init__(self, epsilon=0.95, gamma=0.95, memory_file="CheckersData/checkers_score_huristic6x6.json", nn_model_file="CheckersData/checkersModel6x6.pth"):
         self.gamma = gamma
         self.epsilon = epsilon
         self.memory_file = memory_file
@@ -47,9 +48,11 @@ class CheckersModel:
         for row in range(BOARD_SIZE):
             for col in range(BOARD_SIZE):
                 if (row + col) % 2 == 1:
-                    if row < 2:
+                    if row < 2: #6x6 mode
+                    # if row < 3: #8x8 mode
                         self.board[row][col] = {"color": "black", "king": False}
-                    elif row > BOARD_SIZE - 3:
+                    elif row > BOARD_SIZE - 3: #6x6 mode
+                    # elif row > BOARD_SIZE - 4: #8x8 mode
                         self.board[row][col] = {"color": "white", "king": False}
 
     def print(self):
@@ -400,12 +403,11 @@ class CheckersModel:
         if os.path.exists(self.memory_file):
             with open(self.memory_file, "r") as f:
                 return json.load(f)
-            # with open("CheckersData/checkers_score_huristic-greedy.json", "r") as f:
-            #     return json.load(f)
+
         return {}
 
     def save_memory(self):
-        with open("CheckersData/checkers_score_huristic.json", "w") as f:
+        with open(self.memory_file, "w") as f:
             json.dump(self.values, f, indent=2)
 
     def play_agent_vs_agent(self, white_play="AGENT", black_play="AGENT", max_moves=500):
@@ -443,7 +445,7 @@ class CheckersModel:
         for i in range(1, rounds + 1):
             winner = self.play_agent_vs_agent(white_play, black_play)
             results[winner] += 1
-            if i % 1000 == 0:
+            if i % 100 == 0:
                 print(f"Game {i}")
             mean_score_list.append(self.count/len(self.history))
             # print(f"Game {i}: {winner}")
@@ -462,7 +464,7 @@ class CheckersModel:
 if __name__ == "__main__":
     model = CheckersModel()
     model.run_tournament(100000, white_play="AGENT", black_play="AGENT")
-    model.save_memory()
+    # model.save_memory()
     #
     # data = model.load_memory()
     # print(len(data))

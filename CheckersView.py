@@ -7,7 +7,10 @@ from PySide6.QtMultimedia import QSoundEffect
 
 WINDOW_WIDTH = 464
 WINDOW_HEIGHT = 464
-BOARD_SIZE = 6
+
+# BOARD_SIZE = 6
+BOARD_SIZE = 8
+
 CELL_SIZE = WINDOW_WIDTH // BOARD_SIZE
 
 WINDOW_TITLE = "Checkers Game"
