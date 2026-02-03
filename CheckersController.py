@@ -101,10 +101,10 @@ class CheckersController:
             minutes = self.timer // 60
             seconds = self.timer % 60
             time = f"{minutes:02d}:{seconds:02d}"
-            if winner == "white":
-                self.view.play_game_win()
+            if (self.game_mode == "agent" and winner == "white") or (winner and self.game_mode == "1v1"):
+                self.view.play_win_sound()
             else:
-                self.view.play_game_lose()
+                self.view.play_lose_sound()
 
             self.view.show_end_screen(winner, time,
                 on_restart=self.restart_game,
@@ -116,7 +116,7 @@ class CheckersController:
 
     def restart_game(self):
         self.model.reset_game()
-        self.view.play_game_start()
+        self.view.play_start_sound()
         self.timer = 0
         self.view.timer_text.setText("Time: 00:00")
         self.game_timer.start()

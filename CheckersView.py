@@ -1,6 +1,6 @@
 import os
 import random
-from PySide6.QtWidgets import QMainWindow, QLabel, QPushButton, QMessageBox, QWidget, QVBoxLayout, QHBoxLayout
+from PySide6.QtWidgets import QMainWindow, QLabel, QPushButton, QWidget, QVBoxLayout, QHBoxLayout
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtCore import QSize, QUrl, Qt
 from PySide6.QtMultimedia import QSoundEffect
@@ -8,8 +8,8 @@ from PySide6.QtMultimedia import QSoundEffect
 WINDOW_WIDTH = 464
 WINDOW_HEIGHT = 464
 
-# BOARD_SIZE = 6
-BOARD_SIZE = 8
+BOARD_SIZE = 6
+# BOARD_SIZE = 8
 
 CELL_SIZE = WINDOW_WIDTH // BOARD_SIZE
 
@@ -99,7 +99,7 @@ class CheckersView(QMainWindow):
         self.win_sound = QSoundEffect()
         self.lose_sound = QSoundEffect()
 
-        self.play_game_start()
+        self.play_start_sound()
         self.setup_layout()
 
     def setup_layout(self):
@@ -133,6 +133,7 @@ class CheckersView(QMainWindow):
         self.menu_btn = QPushButton()
         self.sound_btn = QPushButton()
         self.info_btn = QPushButton()
+
         for btn in (self.settings_btn, self.menu_btn, self.sound_btn, self.info_btn):
             btn.setFlat(True)
             btn.setStyleSheet("QPushButton { padding: 0px; border: none; }")
@@ -157,6 +158,9 @@ class CheckersView(QMainWindow):
         panel_layout.addWidget(self.menu_btn)
         panel_layout.addWidget(self.sound_btn)
         panel_layout.addWidget(self.info_btn)
+
+        self.update_sound_icon()
+
 
     def draw_board(self, board):
         for btn in self.piece_buttons:
@@ -297,18 +301,18 @@ class CheckersView(QMainWindow):
         if self.sound_enabled:
             self.king_sound.play()
 
-    def play_game_start(self):
+    def play_start_sound(self):
         if self.sound_enabled:
             self.game_start_sound.play()
 
-    def play_game_win(self):
+    def play_win_sound(self):
         if self.sound_enabled:
             self.win_sound.setSource(QUrl.fromLocalFile(
                 random.choice(SOUND_GAME_WIN)
             ))
             self.win_sound.play()
 
-    def play_game_lose(self):
+    def play_lose_sound(self):
         if self.sound_enabled:
             self.lose_sound.setSource(QUrl.fromLocalFile(
                 random.choice(SOUND_GAME_LOSE)

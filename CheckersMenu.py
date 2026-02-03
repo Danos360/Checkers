@@ -194,7 +194,7 @@ class CheckersMenu(QMainWindow):
             self.menu_sound.stop()
             self.intro_sound.play()
 
-            QTimer.singleShot(3000, self.launch_game)
+            QTimer.singleShot(3500, self.launch_game)
         else:
             self.launch_game()
 
@@ -206,7 +206,7 @@ class CheckersMenu(QMainWindow):
         controller = CheckersController(model, view, self.game_mode)
 
         view.show()
-        view.play_game_start()
+        view.play_start_sound()
         self.close()
 
 def main():
