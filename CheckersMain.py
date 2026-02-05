@@ -2,7 +2,6 @@ import sys
 from PySide6.QtWidgets import QApplication
 from CheckersMenu import CheckersMenu
 
-
 def main():
     app = QApplication(sys.argv)
 

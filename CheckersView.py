@@ -21,7 +21,8 @@ SETTINGS_ICON = "Game-Design/settings-icon.png"
 BACK_ICON = "Game-Design/back-icon.png"
 SOUNDON_ICON = "Game-Design/soundon-icon.png"
 SOUNDOFF_ICON = "Game-Design/soundoff-icon.png"
-INFO_ICON = "Game-Design/info-icon.png"
+DARKMODE_ICON = "Game-Design/darkmode-icon.png"
+LIGHTMODE_ICON = "Game-Design/lightmode-icon.png"
 SOUND_CLICK_FILE = "Game-Sounds/Click_Sound.wav"
 SOUND_MOVE = "Game-Sounds/make-move.wav"
 SOUND_KING = "Game-Sounds/make-king.wav"
@@ -75,6 +76,7 @@ class CheckersView(QMainWindow):
 
         self.end_screen = None
         self.sound_enabled = sound_enabled
+        self.dark_mode = False
 
         self.skin = SKIN_SETS.get(bg_image, SKIN_SETS["Game-Design/checkers-BG1-mini.png"])
 
@@ -115,7 +117,7 @@ class CheckersView(QMainWindow):
         top_layout.setSpacing(20)
 
         panel_layout = QVBoxLayout(self.settings_panel)
-        panel_layout.setContentsMargins(10, 10, 10, 10)
+        panel_layout.setContentsMargins(10, 0, 10, 10)
         panel_layout.setSpacing(5)
 
         self.turn_text = QLabel("Turn: WHITE")
@@ -132,9 +134,9 @@ class CheckersView(QMainWindow):
         self.settings_btn = QPushButton()
         self.menu_btn = QPushButton()
         self.sound_btn = QPushButton()
-        self.info_btn = QPushButton()
+        self.theme_btn = QPushButton()
 
-        for btn in (self.settings_btn, self.menu_btn, self.sound_btn, self.info_btn):
+        for btn in (self.settings_btn, self.menu_btn, self.sound_btn, self.theme_btn):
             btn.setFlat(True)
             btn.setStyleSheet("QPushButton { padding: 0px; border: none; }")
             btn.setFixedSize(36, 36)
@@ -143,11 +145,12 @@ class CheckersView(QMainWindow):
         self.settings_btn.setIcon(QIcon(SETTINGS_ICON))
         self.menu_btn.setIcon(QIcon(BACK_ICON))
         self.sound_btn.setIcon(QIcon(SOUNDON_ICON))
-        self.info_btn.setIcon(QIcon(INFO_ICON))
+        self.theme_btn.setIcon(QIcon(LIGHTMODE_ICON))
 
         self.settings_btn.clicked.connect(self.toggle_settings_panel)
         self.menu_btn.clicked.connect(self.back_to_menu)
         self.sound_btn.clicked.connect(self.toggle_sound)
+        self.theme_btn.clicked.connect(self.toggle_theme)
 
         top_layout.addWidget(self.turn_text)
         top_layout.addSpacing(60)
@@ -157,10 +160,9 @@ class CheckersView(QMainWindow):
 
         panel_layout.addWidget(self.menu_btn)
         panel_layout.addWidget(self.sound_btn)
-        panel_layout.addWidget(self.info_btn)
+        panel_layout.addWidget(self.theme_btn)
 
         self.update_sound_icon()
-
 
     def draw_board(self, board):
         for btn in self.piece_buttons:
@@ -242,6 +244,18 @@ class CheckersView(QMainWindow):
         icon = SOUNDON_ICON if self.sound_enabled else SOUNDOFF_ICON
         self.sound_btn.setIcon(QIcon(icon))
 
+    def toggle_theme(self):
+        self.dark_mode = not self.dark_mode
+
+        if self.dark_mode:
+            self.apply_dark_mode()
+            self.theme_btn.setIcon(QIcon(DARKMODE_ICON))
+        else:
+            self.apply_light_mode()
+            self.theme_btn.setIcon(QIcon(LIGHTMODE_ICON))
+
+        self.play_click_sound()
+
     def toggle_sound(self):
         self.sound_enabled = not self.sound_enabled
         self.update_sound_icon()
@@ -289,6 +303,52 @@ class CheckersView(QMainWindow):
         layout.addWidget(menu_btn)
 
         self.end_screen.show()
+
+    def apply_dark_mode(self):
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #1e1e1e;
+            }
+            QLabel {
+                color: white;
+            }
+            QPushButton {
+                color: white;
+            }
+        """)
+
+        for text in (self.turn_text, self.timer_text):
+            text.setStyleSheet(
+                "font-size: 18px; font-weight: bold; color: white;"
+                "background-color: rgba(255,255,255,100);"
+                "padding: 6px 14px; border-radius: 8px;"
+            )
+
+        self.top_bar.setStyleSheet("background-color: #1e1e1e;")
+        self.settings_panel.setStyleSheet("background-color: #1e1e1e;")
+
+    def apply_light_mode(self):
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #f0f0f0;
+            }
+            QLabel {
+                color: black;
+            }
+            QPushButton {
+                color: black;
+            }
+        """)
+
+        for text in (self.turn_text, self.timer_text):
+            text.setStyleSheet(
+                "font-size: 18px; font-weight: bold; color: white;"
+                "background-color: rgba(0,0,0,160);"
+                "padding: 6px 14px; border-radius: 8px;"
+            )
+
+        self.top_bar.setStyleSheet("background-color: #f0f0f0;")
+        self.settings_panel.setStyleSheet("background-color: #f0f0f0;")
 
     def play_click_sound(self):
         self.click_sound.play()
