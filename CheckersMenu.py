@@ -38,7 +38,7 @@ class CheckersMenu(QMainWindow):
 
         self.bg_num = 1
         self.game_mode = "1v1"
-        self.game_starting = True
+        self.game_starting = False
         self.sound_enabled = sound_enabled
 
         self.setWindowTitle(WINDOW_TITLE)
@@ -60,6 +60,7 @@ class CheckersMenu(QMainWindow):
 
         self.intro_sound = QSoundEffect()
         self.intro_sound.setSource(QUrl.fromLocalFile(INTRO_SOUND_FILE))
+        self.intro_sound.playingChanged.connect(self.on_intro_sound_changed)
 
         self.label = QLabel(self)
         self.label.setPixmap(pixmap)
@@ -193,9 +194,12 @@ class CheckersMenu(QMainWindow):
         if self.sound_enabled:
             self.menu_sound.stop()
             self.intro_sound.play()
-
-            QTimer.singleShot(3500, self.launch_game)
         else:
+            self.launch_game()
+
+    def on_intro_sound_changed(self):
+        if not self.intro_sound.isPlaying() and not self.game_starting:
+            self.game_starting = True
             self.launch_game()
 
     def launch_game(self):
