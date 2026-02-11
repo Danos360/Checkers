@@ -20,6 +20,7 @@ START_BUTTON_IMAGE = "Game-Design/start_button.png"
 GAMEMODE_BUTTON_IMAGE = "Game-Design/gamemode_button.png"
 CHANGEBG_BUTTON_IMAGE = "Game-Design/changebg_button.png"
 SETTINGS_ICON = "Game-Design/settings-icon.png"
+BACK_ICON = "Game-Design/back-icon.png"
 SOUNDON_ICON = "Game-Design/soundon-icon.png"
 SOUNDOFF_ICON = "Game-Design/soundoff-icon.png"
 SOUND_MENU_FILE = "Game-Sounds/Menu-Sound.wav"
@@ -119,24 +120,29 @@ class CheckersMenu(QMainWindow):
         self.settings_btn.clicked.connect(self.toggle_settings_panel)
 
         self.settings_panel = QWidget(self)
-        self.settings_panel.setGeometry(WINDOW_WIDTH - 60, 40, 150, 60)
+        self.settings_panel.setGeometry(WINDOW_WIDTH - 60, 50, 150, 100)
         self.settings_panel.hide()
 
         panel_layout = QVBoxLayout(self.settings_panel)
-        panel_layout.setContentsMargins(10, 10, 10, 10)
-        panel_layout.setSpacing(8)
+        panel_layout.setContentsMargins(10, 0, 10, 10)
+        panel_layout.setSpacing(5)
 
         self.sound_btn = QPushButton()
         self.update_sound_icon()
         self.sound_btn.clicked.connect(self.toggle_sound)
 
-        for btn in (self.settings_btn, self.sound_btn):
+        self.exit_btn = QPushButton()
+        self.exit_btn.setIcon(QIcon(BACK_ICON))
+        self.exit_btn.clicked.connect(self.close)
+
+        for btn in (self.settings_btn, self.sound_btn, self.exit_btn):
             btn.setFlat(True)
             btn.setStyleSheet("QPushButton { padding: 0px; border: none; }")
             btn.setFixedSize(36, 36)
             btn.setIconSize(QSize(36, 36))
 
         panel_layout.addWidget(self.sound_btn)
+        panel_layout.addWidget(self.exit_btn)
 
     def next_background(self):
         self.bg_num = (self.bg_num+1) % len(self.backgrounds)
