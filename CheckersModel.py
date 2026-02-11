@@ -220,13 +220,8 @@ class CheckersModel:
                 if piece and piece["color"] == color:
                     for new_row, new_col in self.get_moves(row, col):
                         simulated = self.simulate_move(row, col, new_row, new_col)
-                        key = self.board_to_key(simulated)
 
-                        if key in self.values:
-                            score = self.values[key][0]
-                        else:
-                            self.count += 1
-                            score = self.nn_evaluate(simulated)
+                        score = self.nn_evaluate(simulated)
 
                         if score > best_score:
                             best_score = score
@@ -463,7 +458,7 @@ class CheckersModel:
 
 if __name__ == "__main__":
     model = CheckersModel()
-    model.run_tournament(100000, white_play="AGENT", black_play="AGENT")
+    model.run_tournament(1000, white_play="AGENT", black_play="AGENT")
     # model.save_memory()
     #
     # data = model.load_memory()
