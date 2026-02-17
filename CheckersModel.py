@@ -12,7 +12,7 @@ from CheckersNN import CheckersNet
 
 class CheckersModel:
     # def __init__(self, epsilon=0.95, gamma=0.95, memory_file="CheckersData/checkers_score_huristic8x8.json", nn_model_file="CheckersData/checkersModel8x8.pth"):
-    def __init__(self, epsilon=0.95, gamma=0.95, memory_file="CheckersData/checkers_score_huristic6x6.json", nn_model_file="CheckersData/checkersModel6x6.pth"):
+    def __init__(self, epsilon=0.95, gamma=0.95, memory_file="CheckersData/checkers_score_huristic6x6.json", nn_model_file="CheckersData/best_model6x6.pth"):
         self.gamma = gamma
         self.epsilon = epsilon
         self.memory_file = memory_file
@@ -458,7 +458,7 @@ class CheckersModel:
 
 if __name__ == "__main__":
     model = CheckersModel()
-    model.run_tournament(1000, white_play="AGENT", black_play="AGENT")
+    model.run_tournament(1000, white_play="GREEDY_NN", black_play="AGENT")
     # model.save_memory()
     #
     # data = model.load_memory()
