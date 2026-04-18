@@ -18,8 +18,8 @@ print(f"Using device: {device}")
 MEMORY_FILE_PATH = "CheckersData/checkers_score_huristic6x6.json"
 TEST_INDICES_FILE_PATH = "CheckersData/ModelDataLearning/test_indices.json"
 CHECKPOINT_FILE = "CheckersData/OldData/checkers_checkpoint6x6-new.pth"
-SNAPSHOT_DIR = "CheckersData/snapshots4-Leaky&Scheduler2"
-BEST_MODEL_FILE = "CheckersData/snapshots4-Leaky&Scheduler2/best_model6x6-optional.pth"
+SNAPSHOT_DIR = "CheckersData/snapshots"
+BEST_MODEL_FILE = "CheckersData/snapshots/best_model6x6.pth"
 
 os.makedirs(SNAPSHOT_DIR, exist_ok=True)
 
