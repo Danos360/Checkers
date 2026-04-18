@@ -2,19 +2,16 @@ import os
 import random
 from PySide6.QtWidgets import QMainWindow, QLabel, QPushButton, QWidget, QVBoxLayout, QHBoxLayout
 from PySide6.QtGui import QPixmap, QIcon
-from PySide6.QtCore import QSize, QUrl, Qt
+from PySide6.QtCore import QSize, QUrl, Qt, Signal
 from PySide6.QtMultimedia import QSoundEffect
 
 WINDOW_WIDTH = 464
 WINDOW_HEIGHT = 464
 
 BOARD_SIZE = 6
-# BOARD_SIZE = 8
-
 CELL_SIZE = WINDOW_WIDTH // BOARD_SIZE
 
 WINDOW_TITLE = "Checkers Game"
-
 CHECKERS_LOGO_IMAGE = "Game-Design/checkers-black2.png"
 CHECKERS_MOVE = "Game-Design/checkers-shadow.png"
 SETTINGS_ICON = "Game-Design/settings-icon.png"
@@ -23,6 +20,7 @@ SOUNDON_ICON = "Game-Design/soundon-icon.png"
 SOUNDOFF_ICON = "Game-Design/soundoff-icon.png"
 DARKMODE_ICON = "Game-Design/darkmode-icon.png"
 LIGHTMODE_ICON = "Game-Design/lightmode-icon.png"
+
 SOUND_CLICK_FILE = "Game-Sounds/Click_Sound.wav"
 SOUND_MOVE = "Game-Sounds/make-move.wav"
 SOUND_KING = "Game-Sounds/make-king.wav"
@@ -61,6 +59,26 @@ SKIN_SETS = {
 }
 
 class CheckersView(QMainWindow):
+
+    # Signal that calls the main manager to return to the menu with the current sound mode.
+    back_to_menu_signal = Signal(bool)
+
+    """
+    Initialize the game view.
+
+    Setups:
+    - Window properties.
+    - Background and board display.
+    - UI elements and layout.
+    - Sound effects.
+    - Skin set based on selected background.
+
+    :param bg_image - Selected background image path.
+    :type bg_image: str
+
+    :param sound_enabled - Initial sound state.
+    :type sound_enabled: bool
+    """
     def __init__(self, bg_image, sound_enabled=True):
         super().__init__()
         self.setFixedSize(600, 600)
@@ -78,7 +96,7 @@ class CheckersView(QMainWindow):
         self.sound_enabled = sound_enabled
         self.dark_mode = False
 
-        self.skin = SKIN_SETS.get(bg_image, SKIN_SETS["Game-Design/checkers-BG1-mini.png"])
+        self.skin = SKIN_SETS.get(bg_image)
 
         self.label = QLabel(self)
         bg = QPixmap(os.path.abspath(bg_image))
@@ -104,6 +122,15 @@ class CheckersView(QMainWindow):
         self.play_start_sound()
         self.setup_layout()
 
+    """
+    Create and configure UI layout.
+    
+    Includes:
+    - Settings panel. (menu, sound toggle, theme toggle).
+    - Top bar. (turn indication, timer).
+    
+    Also connects button signal to their handlers.
+    """
     def setup_layout(self):
         self.top_bar = QWidget(self)
         self.top_bar.setGeometry(0, 0, 600, 50)
@@ -165,6 +192,14 @@ class CheckersView(QMainWindow):
         self.update_sound_icon()
         self.toggle_theme()
 
+    """
+    Render the entire board.
+    
+    Clears existing pieces and redraw them based on current state.
+    
+    :param board - Matrix 2D list representing the board state.
+    :type board: list 
+    """
     def draw_board(self, board):
         for btn in self.piece_buttons:
             btn.deleteLater()
@@ -179,8 +214,21 @@ class CheckersView(QMainWindow):
                 if piece:
                     self.draw_piece(row, col, piece)
 
+    """
+    Draw a piece on the board.
+    
+    Selects the current image based on the color and King flag.
+    
+    :param row - Row index.
+    :type row: int
+    
+    :param col - Column index.
+    :type col: int
+    
+    :param piece - Piece data (color + king flag).
+    :type piece: dict
+    """
     def draw_piece(self, row, col, piece):
-
         btn = QPushButton(self.label)
 
         if piece["king"] and piece["color"] == "black":
@@ -202,6 +250,12 @@ class CheckersView(QMainWindow):
         btn.show()
         self.piece_buttons.append(btn)
 
+    """
+    Display available moves as clicked overlays.
+    
+    :param moves - List of (row, col) position.
+    :type moves: list[tuple[int, int]]
+    """
     def show_moves(self, moves):
         for btn in self.move_buttons:
             btn.deleteLater()
@@ -219,9 +273,18 @@ class CheckersView(QMainWindow):
             btn.show()
             self.move_buttons.append(btn)
 
+    """
+    Draw a background shadow under a square. Used for visualization.
+    
+    :param row - Row index.
+    :type row: int
+    
+    :param col - Column index.
+    :type col: int
+    """
     def draw_shadow(self, row, col):
         btn = QPushButton(self.label)
-        btn.setIcon(QIcon(CHECKERS_MOVE))  # shadow image
+        btn.setIcon(QIcon(CHECKERS_MOVE))
         btn.setGeometry(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE)
         btn.setIconSize(QSize(CELL_SIZE, CELL_SIZE))
         btn.setFlat(True)
@@ -232,19 +295,33 @@ class CheckersView(QMainWindow):
 
         self.shadow_buttons.append(btn)
 
+    """
+    Remove all shadow highlights from the board.
+    """
     def clear_shadows(self):
         for btn in self.shadow_buttons:
             btn.deleteLater()
         self.shadow_buttons = []
 
+    """
+    Show or hide the settings panel.
+    """
     def toggle_settings_panel(self):
         self.settings_panel.setVisible(not self.settings_panel.isVisible())
         self.play_click_sound()
 
+    """
+    Update sound button icon based on current state.
+    """
     def update_sound_icon(self):
         icon = SOUNDON_ICON if self.sound_enabled else SOUNDOFF_ICON
         self.sound_btn.setIcon(QIcon(icon))
 
+    """
+    Toggle between dark mode and light mode.
+    
+    Updates UI styling and button icon.
+    """
     def toggle_theme(self):
         self.dark_mode = not self.dark_mode
 
@@ -257,17 +334,41 @@ class CheckersView(QMainWindow):
 
         self.play_click_sound()
 
+    """
+    Enable or disable sound.
+    """
     def toggle_sound(self):
         self.sound_enabled = not self.sound_enabled
         self.update_sound_icon()
 
+    """
+    Close current game view and calls a signal the opens the main menu.
+    """
     def back_to_menu(self):
+        self.back_to_menu_signal.emit(self.sound_enabled)
+
         self.close()
 
-        from CheckersMenu import CheckersMenu
-        self.menu = CheckersMenu(self.sound_enabled)
-        self.menu.show()
-
+    """
+    Display end of game overlay.
+    
+    Shows:
+    - Winner.
+    - Time player.
+    - Restart and menu buttons.
+    
+    :param winner - Winning player.
+    :type winner: str
+    
+    :param timer - Game duration.
+    :type timer: str
+    
+    :param on_restart - Callback for restarting the game.
+    :type on_restart: Callable
+    
+    :param on_menu - Callback for returning to menu.
+    :type on_menu: Callable
+    """
     def show_end_screen(self, winner, timer, on_restart, on_menu):
         self.turn_text.setText("Turn: Game Over")
 
@@ -305,6 +406,12 @@ class CheckersView(QMainWindow):
 
         self.end_screen.show()
 
+    """
+    Apply visual theme to the UI.
+    
+    :param dark_mode - True for dark mode, False for light mode.
+    :type dark_mode: bool
+    """
     def apply_theme(self, dark_mode: bool):
         window_bg = "#1e1e1e" if dark_mode else "#f0f0f0"
         text_color = "white" if dark_mode else "black"
@@ -333,21 +440,36 @@ class CheckersView(QMainWindow):
         self.top_bar.setStyleSheet(f"background-color: {panel_bg};")
         self.settings_panel.setStyleSheet(f"background-color: {panel_bg};")
 
+    """
+    Play click sound effect.
+    """
     def play_click_sound(self):
         self.click_sound.play()
 
+    """
+    Play move sound if sound is enabled.
+    """
     def play_move_sound(self):
         if self.sound_enabled:
             self.move_sound.play()
 
+    """
+    Play king promotion sound if sound is enabled.
+    """
     def play_king_sound(self):
         if self.sound_enabled:
             self.king_sound.play()
 
+    """
+    Play game start sound if sound is enabled.
+    """
     def play_start_sound(self):
         if self.sound_enabled:
             self.game_start_sound.play()
 
+    """
+    Play random win sound if sound is enabled.
+    """
     def play_win_sound(self):
         if self.sound_enabled:
             self.win_sound.setSource(QUrl.fromLocalFile(
@@ -355,6 +477,9 @@ class CheckersView(QMainWindow):
             ))
             self.win_sound.play()
 
+    """
+    Play random loss sound if sound is enabled.
+    """
     def play_lose_sound(self):
         if self.sound_enabled:
             self.lose_sound.setSource(QUrl.fromLocalFile(
