@@ -50,6 +50,6 @@ python main.py
 * **Controller**: Connects the user inputs to the game logic using a Signal-based system.
 * **Data/Model**: Contains the ``.pth`` files (trained Neural Network weights) and images and sound paths.
 
-**Author: Dan Levkov @Danos360**
+**Author: Dan Levkov [@Danos360](https://github.com/Danos360)** 
 
 **Checkers Game - School Project**
