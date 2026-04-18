@@ -41,7 +41,7 @@ cd Checkers
 ```
 **4. Launch the game:**
 ```bash
-python main.py
+python CheckersMain.py
 ```
 
 ## 📂 **Project Structure**
