@@ -87,14 +87,9 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     net = CheckersNet().to(device)
-    model = torch.load("CheckersData/snapshots4-Leaky&Scheduler2/epoch_10.pth", map_location=device)
+    model = torch.load("CheckersData/best_model6x6.pth", map_location=device)
     net.load_state_dict(model["model"])
     net.eval()
-
-    # board_key = "........W..................B..B....."
-    # board_tensor = encode_board_from_key(board_key)
-    # score = predict_board_score(net, board_tensor, device)
-    # print("Predicted score:", score)
 
     with open("CheckersData/ModelDataLearning/test_indices.json", "r") as f:
         test_boards = json.load(f)

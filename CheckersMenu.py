@@ -216,7 +216,8 @@ class CheckersMenu(QMainWindow):
     def update_gm_preview(self):
         self.gm_preview.setText(self.game_mode.upper())
         self.gm_preview.setAlignment(Qt.AlignCenter)
-        self.gm_preview.setStyleSheet("""QLabel{font-size: 20px; font-weight: bold; color: white; background-color: rgba(0,0,0,70); border-radius: 10px;}""")
+        self.gm_preview.setStyleSheet("""QLabel{font-size: 20px; font-weight: bold; 
+        color: white; background-color: rgba(0,0,0,70); border-radius: 10px;}""")
 
     """
     Show or hide the settings panel.

@@ -152,7 +152,6 @@ class CheckersModel:
 
     """
     Move a piece on the board.
-    
     Handles:
     - Movment
     - Captures
