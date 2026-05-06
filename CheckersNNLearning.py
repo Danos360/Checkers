@@ -80,7 +80,7 @@ if __name__ == "__main__":
     - Load test board indices.
     - Load full data with true scores.
     - Predict scores for test boards.
-    - Create error statistics.
+    - Create model evaluation statistics.
     - Save detailed results to JSON.
     - Plot distribution of prediction vs true scores. 
     """
@@ -123,13 +123,27 @@ if __name__ == "__main__":
         predictions.append(pred)
         true_preds.append(true_score)
 
-    mean_error = np.mean(errors)
-    max_error = np.max(errors)
-    min_error = np.min(errors)
+    predictions = np.array(predictions)
+    true_scores = np.array(true_preds)
+    errors = np.array(errors)
 
-    print(f"Mean Error: {mean_error:.6f}")
-    print(f"Max Error: {max_error:.6f}")
-    print(f"Min Error: {min_error:.6f}")
+    mae = np.mean(errors)
+    mse = np.mean((predictions - true_scores) ** 2)
+    rmse = np.sqrt(mse)
+
+    correlation = np.corrcoef(true_scores, predictions)[0, 1]
+
+    within_010 = np.mean(errors <= 0.10) * 100
+    within_020 = np.mean(errors <= 0.20) * 100
+
+    print("===== MODEL ACCURACY REPORT =====")
+    print(f"Boards tested        : {len(test_boards)}")
+    print(f"MAE (Mean Error)     : {mae:.6f}")
+    print(f"MSE                 : {mse:.6f}")
+    print(f"RMSE                : {rmse:.6f}")
+    print(f"Correlation         : {correlation:.6f}")
+    print(f"Inside 0.10 error  : {within_010:.2f}%")
+    print(f"Inside 0.20 error  : {within_020:.2f}%")
 
     with open("CheckersData/ModelDataLearning/test_analysis.json", "w") as f:
         json.dump(results, f, indent=4)

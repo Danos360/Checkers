@@ -18,7 +18,7 @@ class CheckersController:
         self.model = model
         self.view = view
         self.game_mode = game_mode
-        self.agent_color = "black" if self.game_mode == "agent" else None
+        self.agent_color = "white" if self.game_mode == "agent" else None
         self.timer = 0
 
         view.on_piece_click = self.select_piece
@@ -31,6 +31,9 @@ class CheckersController:
         self.game_timer.start(1000)
 
         self.update()
+
+        if self.game_mode == "agent" and self.model.turn == self.agent_color:
+            self.agent_move()
 
     """
     Refresh the board display and update the turn indicator in the UI.
@@ -188,10 +191,13 @@ class CheckersController:
             minutes = self.timer // 60
             seconds = self.timer % 60
             time = f"{minutes:02d}:{seconds:02d}"
-            if (self.game_mode == "agent" and winner == "white") or (winner and self.game_mode == "1v1"):
-                self.view.play_win_sound()
+            if self.game_mode == "agent":
+                if winner == self.agent_color:
+                    self.view.play_lose_sound()
+                else:
+                    self.view.play_win_sound()
             else:
-                self.view.play_lose_sound()
+                self.view.play_win_sound()
 
             self.view.show_end_screen(winner, time,
                 on_restart=self.restart_game,
@@ -213,5 +219,9 @@ class CheckersController:
 
         if self.view.end_screen:
             self.view.end_screen.deleteLater()
+            self.view.end_screen = None
 
         self.update()
+
+        if self.game_mode == "agent" and self.model.turn == self.agent_color:
+            self.agent_move()
