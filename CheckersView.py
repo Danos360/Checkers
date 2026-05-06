@@ -244,7 +244,7 @@ class CheckersView(QMainWindow):
         btn.setGeometry(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE)
         btn.setIconSize(QSize(CELL_SIZE, CELL_SIZE))
         btn.setFlat(True)
-        btn.setStyleSheet("QPushButton { padding: 0px; border: none; }")
+        btn.setStyleSheet("QPushButton { padding: 0px; border: none; outline: none; }")
 
         btn.clicked.connect(lambda _, brow=row, bcol=col: self.on_piece_click(brow, bcol))
         btn.show()
@@ -267,7 +267,7 @@ class CheckersView(QMainWindow):
             btn.setGeometry(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             btn.setIconSize(QSize(CELL_SIZE, CELL_SIZE))
             btn.setFlat(True)
-            btn.setStyleSheet("QPushButton { padding: 0px; border: none; }")
+            btn.setStyleSheet("QPushButton { padding: 0px; border: none; outline: none; }")
 
             btn.clicked.connect(lambda _, brow=row, bcol=col: self.on_move_click(brow, bcol))
             btn.show()
@@ -288,7 +288,7 @@ class CheckersView(QMainWindow):
         btn.setGeometry(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE)
         btn.setIconSize(QSize(CELL_SIZE, CELL_SIZE))
         btn.setFlat(True)
-        btn.setStyleSheet("QPushButton { padding: 0px; border: none; }")
+        btn.setStyleSheet("QPushButton { padding: 0px; border: none; outline: none;}")
 
         btn.lower()
         btn.show()

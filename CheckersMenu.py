@@ -135,7 +135,7 @@ class CheckersMenu(QMainWindow):
 
         for btn in (self.start_button, self.rules_button, self.bg_button, self.gm_button):
             btn.setFlat(True)
-            btn.setStyleSheet("QPushButton { padding: 0px; border: none; }")
+            btn.setStyleSheet("QPushButton { padding: 0px; border: none; outline: none; }")
             btn.setIconSize(QSize(150, 150))
         self.rules_button.setIconSize(QSize(150, 90))
         self.start_button.setIconSize(QSize(200, 200))
